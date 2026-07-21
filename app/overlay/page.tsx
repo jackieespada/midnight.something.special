@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import type { ShowState } from "@/lib/state";
+import type { ShowState } from "../../lib/state";
 
 // Set this to your real request page URL once deployed, e.g.
 // https://midnightsomethingspecial.vercel.app/request
