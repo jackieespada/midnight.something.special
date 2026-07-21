@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Request as QueuedRequest } from "@/lib/state";
+import type { Request as QueuedRequest } from "../../lib/state";
 
 export default function RequestPage() {
   const [song, setSong] = useState("");
