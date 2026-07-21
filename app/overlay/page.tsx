@@ -38,7 +38,7 @@ export default function OverlayPage() {
   const upNext = state?.queue?.[0] || null;
 
   return (
-    <div style={{ width: "1920px", height: "1080px", position: "relative", background: "#0c0705", overflow: "hidden" }}>
+    <div style={{ width: "1920px", height: "1080px", position: "relative", background: "transparent", overflow: "hidden" }}>
       <video autoPlay muted loop playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}>
         {/* Put your background video at /public/bg.webm */}
         <source src="/bg.webm" type="video/webm" />
@@ -50,23 +50,23 @@ export default function OverlayPage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
             <span style={dotStyle} />
             <span style={tagStyle}>Now playing</span>
-            <span style={{ display: "flex", gap: 3, alignItems: "flex-end", height: 12, marginLeft: 4 }}>
+            <span style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 16, marginLeft: 4 }}>
               {[0, 1, 2, 3].map((i) => (
-                <i key={i} style={{ width: 2.5, background: "var(--gold)", display: "block", borderRadius: 1, animation: `eq 1s ease-in-out infinite ${i * 0.15}s` }} />
+                <i key={i} style={{ width: 3.5, background: "var(--gold)", display: "block", borderRadius: 1, animation: `eq 1s ease-in-out infinite ${i * 0.15}s` }} />
               ))}
             </span>
           </div>
-          <div style={{ fontWeight: 700, fontSize: 20, lineHeight: 1.15, color: "#fff" }}>{state?.nowPlaying?.title || "—"}</div>
-          <div style={{ color: "#e7c9a8", fontSize: 14, marginTop: 4 }}>{state?.nowPlaying?.artist || ""}</div>
+          <div style={{ fontWeight: 700, fontSize: 30, lineHeight: 1.15, color: "#fff" }}>{state?.nowPlaying?.title || "—"}</div>
+          <div style={{ color: "#e7c9a8", fontSize: 20, marginTop: 6 }}>{state?.nowPlaying?.artist || ""}</div>
 
-          <div style={{ height: 1, background: "rgba(232,161,60,.35)", margin: "12px 0" }} />
+          <div style={{ height: 1, background: "rgba(232,161,60,.35)", margin: "18px 0" }} />
 
           <div style={miniPillStyle}>
             <div style={miniTagStyle}>Last played</div>
             <div style={miniTitleStyle}>{state?.lastPlayed?.title || "—"}</div>
             <div style={miniArtistStyle}>{state?.lastPlayed?.artist || ""}</div>
           </div>
-          <div style={{ ...miniPillStyle, marginTop: 8 }}>
+          <div style={{ ...miniPillStyle, marginTop: 12 }}>
             <div style={miniTagStyle}>Up next</div>
             <div style={miniTitleStyle}>{upNext?.title || "—"}</div>
             <div style={miniArtistStyle}>{upNext?.artist || ""}</div>
@@ -80,7 +80,7 @@ export default function OverlayPage() {
             <span style={tagStyle}>Request</span>
           </div>
           {qrDataUrl && <img src={qrDataUrl} alt="QR code to request a song" style={{ width: "100%", borderRadius: 6 }} />}
-          <div style={{ color: "var(--ink-dim)", fontSize: 10, marginTop: 6, wordBreak: "break-all" }}>{requestUrl.replace(/^https?:\/\//, "")}</div>
+          <div style={{ color: "var(--ink-dim)", fontSize: 14, marginTop: 10, wordBreak: "break-all" }}>{requestUrl.replace(/^https?:\/\//, "")}</div>
         </div>
       </div>
     </div>
@@ -90,22 +90,22 @@ export default function OverlayPage() {
 function panelStyle(side: "left" | "right"): React.CSSProperties {
   return {
     position: "absolute",
-    top: "32%",
-    [side]: "2.5%",
-    background: "rgba(12,7,5,.88)",
-    border: "2px solid var(--gold)",
-    borderRadius: 12,
-    padding: 16,
-    width: "22%",
-    maxWidth: 180,
-    boxShadow: "0 0 14px rgba(232,161,60,.35)",
+    top: "28%",
+    [side]: "1%",
+    background: "rgba(12,7,5,.9)",
+    border: "3px solid var(--gold)",
+    borderRadius: 18,
+    padding: 28,
+    width: "34%",
+    maxWidth: 320,
+    boxShadow: "0 0 20px rgba(232,161,60,.4)",
     textAlign: "center",
   } as React.CSSProperties;
 }
 
 const dotStyle: React.CSSProperties = {
-  width: 7,
-  height: 7,
+  width: 10,
+  height: 10,
   borderRadius: "50%",
   background: "var(--gold)",
   boxShadow: "0 0 8px var(--gold)",
@@ -113,7 +113,7 @@ const dotStyle: React.CSSProperties = {
 };
 
 const tagStyle: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: 18,
   letterSpacing: ".1em",
   textTransform: "uppercase",
   color: "var(--gold)",
@@ -123,13 +123,13 @@ const tagStyle: React.CSSProperties = {
 const miniPillStyle: React.CSSProperties = {
   background: "rgba(0,0,0,.3)",
   border: "1px solid rgba(232,161,60,.3)",
-  borderRadius: 8,
-  padding: "6px 8px",
+  borderRadius: 10,
+  padding: "10px 14px",
   textAlign: "left",
 };
 
 const miniTagStyle: React.CSSProperties = {
-  fontSize: 11,
+  fontSize: 15,
   letterSpacing: ".04em",
   color: "var(--gold)",
   textTransform: "uppercase",
@@ -137,15 +137,15 @@ const miniTagStyle: React.CSSProperties = {
 };
 
 const miniTitleStyle: React.CSSProperties = {
-  fontSize: 14,
+  fontSize: 22,
   fontWeight: 700,
   color: "#fff",
   lineHeight: 1.2,
-  marginTop: 2,
+  marginTop: 3,
 };
 
 const miniArtistStyle: React.CSSProperties = {
-  fontSize: 12,
+  fontSize: 18,
   color: "#c9a98a",
-  marginTop: 1,
+  marginTop: 2,
 };
