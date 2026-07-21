@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ShowState } from "@/lib/state";
+import type { ShowState } from "../../lib/state";
 
 export default function DjPage() {
   const [state, setState] = useState<ShowState | null>(null);
