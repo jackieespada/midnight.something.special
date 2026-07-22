@@ -1,5 +1,5 @@
 export type Song = { title: string; artist: string };
-export type Request = Song & { name?: string; ts: number };
+export type Request = Song & { name?: string; ts: number; tipped?: boolean; tipCents?: number };
 
 export type ShowState = {
   nowPlaying: Song;
@@ -14,6 +14,16 @@ const defaultState: ShowState = {
   lastPlayed: { title: "September", artist: "Earth, Wind & Fire" },
   queue: [],
 };
+
+// Inserts a tipped request ahead of all non-tipped requests, but behind any
+// requests that were tipped earlier (first tipped, first served).
+export function insertTippedRequest(queue: Request[], req: Request): Request[] {
+  const firstNonTippedIndex = queue.findIndex((r) => !r.tipped);
+  if (firstNonTippedIndex === -1) {
+    return [...queue, req];
+  }
+  return [...queue.slice(0, firstNonTippedIndex), req, ...queue.slice(firstNonTippedIndex)];
+}
 
 // Uses Netlify Blobs (Netlify's built-in key/value store — no separate
 // service to set up, it just works once this is deployed on Netlify).
