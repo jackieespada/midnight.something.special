@@ -18,7 +18,6 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--stage);
   color: var(--ink);
   font-family: "Quicksand", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
