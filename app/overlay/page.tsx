@@ -6,7 +6,7 @@ import type { ShowState } from "../../lib/state";
 
 // Set this to your real request page URL once deployed, e.g.
 // https://midnightsomethingspecial.vercel.app/request
-const REQUEST_URL_FALLBACK = "https://yourdomain.com/request";
+const REQUEST_URL_FALLBACK = "https://jackieespada.com/request";
 
 export default function OverlayPage() {
   const [state, setState] = useState<ShowState | null>(null);
@@ -90,7 +90,8 @@ export default function OverlayPage() {
 function panelStyle(side: "left" | "right"): React.CSSProperties {
   return {
     position: "absolute",
-    top: "28%",
+    top: "50%",
+    transform: "translateY(-50%)",
     [side]: "1%",
     background: "rgba(12,7,5,.9)",
     border: "3px solid var(--gold)",
@@ -125,7 +126,7 @@ const miniPillStyle: React.CSSProperties = {
   border: "1px solid rgba(232,161,60,.3)",
   borderRadius: 10,
   padding: "10px 14px",
-  textAlign: "left",
+  textAlign: "center",
 };
 
 const miniTagStyle: React.CSSProperties = {
