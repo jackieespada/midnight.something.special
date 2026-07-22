@@ -114,7 +114,107 @@ export default function RequestPage() {
 
       <div style={cardStyle}>
         <label style={labelStyle}>Song title</label>
-        <input style={inputStyle} value={song} onChange={(e) =>
+        <input style={inputStyle} value={song} onChange={(e) => setSong(e.target.value)} placeholder="e.g. Le Freak" />
+        <label style={labelStyle}>Artist</label>
+        <input style={inputStyle} value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="e.g. Chic" />
+        <label style={labelStyle}>Your name (optional, shown on stream)</label>
+        <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Jamie from Ohio" />
+        <button style={btnStyle} onClick={submit}>
+          Submit request
+        </button>
+        {showToast && (
+          <div style={{ marginTop: 12, fontSize: 13, color: "var(--gold)" }}>
+            Added to the queue — watch for it on stream.
+          </div>
+        )}
+
+        <div style={{ height: 1, background: "var(--wire)", margin: "20px 0" }} />
+
+        <label style={labelStyle}>Tip to bump ahead of the line (optional)</label>
+        <input
+          style={inputStyle}
+          value={tipAmount}
+          onChange={(e) => setTipAmount(e.target.value)}
+          placeholder="Enter an amount, e.g. 5"
+          inputMode="decimal"
+        />
+        <button style={ghostBtnStyle} onClick={submitWithTip} disabled={tipLoading}>
+          {tipLoading ? "Starting checkout…" : "Tip and bump my song"}
+        </button>
+        {tipError && <div style={{ marginTop: 10, fontSize: 13, color: "var(--signal)" }}>{tipError}</div>}
+      </div>
+
+      <div style={cardStyle}>
+        <div style={{ fontSize: 10.5, color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>
+          Queue right now
+        </div>
+        {queue.length === 0 ? (
+          <div style={{ color: "var(--ink-dim)", fontSize: 13, padding: "8px 0" }}>Nothing queued yet.</div>
+        ) : (
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {queue.map((r, i) => (
+              <li key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--wire)", fontSize: 14 }}>
+                <span>
+                  {r.tipped && <span style={{ color: "var(--gold)" }}>★ </span>}
+                  {r.title} — {r.artist}
+                </span>
+                <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const cardStyle: React.CSSProperties = {
+  background: "linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0))",
+  border: "1px solid var(--wire)",
+  borderRadius: 22,
+  padding: 18,
+  marginBottom: 14,
+};
+
+const labelStyle: React.CSSProperties = {
+  display: "block",
+  fontSize: 11.5,
+  textTransform: "uppercase",
+  letterSpacing: ".08em",
+  color: "var(--ink-dim)",
+  margin: "14px 0 6px",
+};
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  background: "var(--stage)",
+  border: "1px solid var(--wire)",
+  borderRadius: 14,
+  padding: "12px 15px",
+  color: "var(--ink)",
+  fontSize: 15,
+  fontFamily: "inherit",
+};
+
+const btnStyle: React.CSSProperties = {
+  width: "100%",
+  marginTop: 18,
+  border: "none",
+  borderRadius: 999,
+  padding: 14,
+  fontSize: 14.5,
+  fontWeight: 700,
+  letterSpacing: ".02em",
+  cursor: "pointer",
+  background: "linear-gradient(90deg, var(--gold), var(--signal) 65%, var(--haze))",
   color: "#1a0f08",
   boxShadow: "0 6px 18px rgba(232,161,60,.35)",
+};
+
+const ghostBtnStyle: React.CSSProperties = {
+  ...btnStyle,
+  background: "transparent",
+  border: "1px solid var(--gold)",
+  color: "var(--gold)",
+  boxShadow: "none",
 };
