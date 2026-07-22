@@ -38,7 +38,7 @@ export default function RequestPage() {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px" }}>
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
       <div
         style={{
           border: "2px solid var(--gold)",
