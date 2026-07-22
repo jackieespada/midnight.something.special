@@ -37,7 +37,7 @@ export default function DjPage() {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px" }}>
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
       <h1 style={{ fontSize: 24 }}>DJ control panel</h1>
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22 }}>
         Not linked from anywhere public — keep this URL to yourself. Advance the queue here while you're live.
