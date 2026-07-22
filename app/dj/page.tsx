@@ -65,7 +65,11 @@ export default function DjPage() {
               <li key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--wire)", fontSize: 14 }}>
                 <span>
                   {i === 0 ? "▶ " : ""}
-                  {r.tipped && <span style={{ color: "var(--gold)" }}>★ </span>}
+                  {r.tipped && (
+                    <span style={{ color: "var(--gold)" }}>
+                      ★ ${((r.tipCents || 0) / 100).toFixed(2)}{" "}
+                    </span>
+                  )}
                   {r.title} — {r.artist}
                 </span>
                 <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
