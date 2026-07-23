@@ -58,6 +58,14 @@ export default function OverlayPage() {
           </div>
           <div style={{ fontWeight: 700, fontSize: 30, lineHeight: 1.15, color: "#fff" }}>{state?.nowPlaying?.title || "—"}</div>
           <div style={{ color: "#e7c9a8", fontSize: 20, marginTop: 6 }}>{state?.nowPlaying?.artist || ""}</div>
+          {state?.nowPlaying?.name && (
+            <div style={{ color: "var(--gold)", fontSize: 15, marginTop: 6 }}>requested by {state.nowPlaying.name}</div>
+          )}
+          {state?.nowPlaying?.message && (
+            <div style={{ color: "#fff", fontSize: 15, marginTop: 8, fontStyle: "italic", lineHeight: 1.3 }}>
+              "{state.nowPlaying.message}"
+            </div>
+          )}
 
           <div style={{ height: 1, background: "rgba(232,161,60,.35)", margin: "18px 0" }} />
 
