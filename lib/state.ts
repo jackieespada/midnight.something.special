@@ -1,11 +1,18 @@
 export type Song = { title: string; artist: string };
-export type Request = Song & { name?: string; ts: number; tipped?: boolean; tipCents?: number };
+export type NowPlaying = Song & { name?: string; message?: string };
+export type Request = Song & { name?: string; message?: string; ts: number; tipped?: boolean; tipCents?: number };
+export type PlayedSong = Song & { name?: string; ts: number };
+export type Episode = { date: string; songs: PlayedSong[] };
 
 export type ShowState = {
-  nowPlaying: Song;
+  nowPlaying: NowPlaying;
   lastPlayed: Song | null;
   queue: Request[];
+  history: PlayedSong[];
+  episodes: Episode[];
 };
+
+export const MAX_QUEUE = 25;
 
 const STATE_KEY = "midnight-something-special:state";
 
@@ -13,10 +20,13 @@ const defaultState: ShowState = {
   nowPlaying: { title: "Le Freak", artist: "Chic" },
   lastPlayed: { title: "September", artist: "Earth, Wind & Fire" },
   queue: [],
+  history: [],
+  episodes: [],
 };
 
 // Inserts a tipped request ahead of all non-tipped requests, but behind any
-// requests that were tipped earlier (first tipped, first served).
+// requests that were tipped earlier (first tipped, first served). Tipped
+// requests are always allowed in, even if the queue is otherwise "full."
 export function insertTippedRequest(queue: Request[], req: Request): Request[] {
   const firstNonTippedIndex = queue.findIndex((r) => !r.tipped);
   if (firstNonTippedIndex === -1) {
@@ -45,7 +55,13 @@ export async function getState(): Promise<ShowState> {
   if (store) {
     try {
       const raw = await store.get(STATE_KEY);
-      if (raw) return JSON.parse(raw) as ShowState;
+      if (raw) {
+        const parsed = JSON.parse(raw) as ShowState;
+        // Fill in fields for state saved before history/episodes existed
+        if (!parsed.history) parsed.history = [];
+        if (!parsed.episodes) parsed.episodes = [];
+        return parsed;
+      }
     } catch {
       // fall through to default below
     }
