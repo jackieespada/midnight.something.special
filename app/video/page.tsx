@@ -19,8 +19,14 @@ export default function VideoScenePage() {
 
   const upNext = state?.queue?.[0] || null;
 
+  const nowPlayingText = state?.nowPlaying
+    ? `NOW PLAYING: ${state.nowPlaying.title} — ${state.nowPlaying.artist}` +
+      (state.nowPlaying.name ? ` (req. ${state.nowPlaying.name})` : "") +
+      (state.nowPlaying.message ? ` — "${state.nowPlaying.message}"` : "")
+    : null;
+
   const tickerText = [
-    state?.nowPlaying ? `NOW PLAYING: ${state.nowPlaying.title} — ${state.nowPlaying.artist}` : null,
+    nowPlayingText,
     state?.lastPlayed ? `LAST PLAYED: ${state.lastPlayed.title} — ${state.lastPlayed.artist}` : null,
     upNext ? `UP NEXT: ${upNext.title} — ${upNext.artist}` : "UP NEXT: —",
   ]
