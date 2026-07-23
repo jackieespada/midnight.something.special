@@ -7,9 +7,11 @@ export default function RequestPage() {
   const [song, setSong] = useState("");
   const [artist, setArtist] = useState("");
   const [name, setName] = useState("");
+  const [message, setMessage] = useState("");
   const [tipAmount, setTipAmount] = useState("");
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
   const [showToast, setShowToast] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [tipStatus, setTipStatus] = useState<"tipped" | "cancelled" | null>(null);
   const [tipLoading, setTipLoading] = useState(false);
   const [tipError, setTipError] = useState("");
@@ -33,15 +35,22 @@ export default function RequestPage() {
   }, []);
 
   async function submit() {
+    setSubmitError("");
     if (!song.trim() || !artist.trim()) return;
-    await fetch("/api/request", {
+    const res = await fetch("/api/request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: song, artist, name }),
+      body: JSON.stringify({ title: song, artist, name, message }),
     });
+    const data = await res.json();
+    if (!res.ok) {
+      setSubmitError(data.error || "Something went wrong submitting your request.");
+      return;
+    }
     setSong("");
     setArtist("");
     setName("");
+    setMessage("");
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2500);
     loadQueue();
@@ -63,7 +72,7 @@ export default function RequestPage() {
       const res = await fetch("/api/tip-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: song, artist, name, amount }),
+        body: JSON.stringify({ title: song, artist, name, message, amount }),
       });
       const data = await res.json();
       if (data.url) {
@@ -119,6 +128,13 @@ export default function RequestPage() {
         <input style={inputStyle} value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="e.g. Chic" />
         <label style={labelStyle}>Your name (optional, shown on stream)</label>
         <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Jamie from Ohio" />
+        <label style={labelStyle}>Message for me to read on air (optional, 200 characters)</label>
+        <textarea
+          style={{ ...inputStyle, minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
+          value={message}
+          onChange={(e) => setMessage(e.target.value.slice(0, 200))}
+          placeholder="Shoutout, dedication, whatever you want me to say on stream"
+        />
         <button style={btnStyle} onClick={submit}>
           Submit request
         </button>
@@ -127,6 +143,7 @@ export default function RequestPage() {
             Added to the queue — watch for it on stream.
           </div>
         )}
+        {submitError && <div style={{ marginTop: 12, fontSize: 13, color: "var(--signal)" }}>{submitError}</div>}
 
         <div style={{ height: 1, background: "var(--wire)", margin: "20px 0" }} />
 
@@ -146,7 +163,7 @@ export default function RequestPage() {
 
       <div style={cardStyle}>
         <div style={{ fontSize: 10.5, color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>
-          Queue right now
+          Queue right now ({queue.length}/25)
         </div>
         {queue.length === 0 ? (
           <div style={{ color: "var(--ink-dim)", fontSize: 13, padding: "8px 0" }}>Nothing queued yet.</div>
@@ -155,11 +172,7 @@ export default function RequestPage() {
             {queue.map((r, i) => (
               <li key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--wire)", fontSize: 14 }}>
                 <span>
-                  {r.tipped && (
-                    <span style={{ color: "var(--gold)" }}>
-                      ★ ${((r.tipCents || 0) / 100).toFixed(2)}{" "}
-                    </span>
-                  )}
+                  {r.tipped && <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)} </span>}
                   {r.title} — {r.artist}
                 </span>
                 <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
