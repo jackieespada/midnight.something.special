@@ -12,6 +12,7 @@ export async function POST(req: Request) {
   const title = (body.title || "").toString().trim();
   const artist = (body.artist || "").toString().trim();
   const name = (body.name || "").toString().trim();
+  const message = (body.message || "").toString().trim().slice(0, 200);
   const amount = Number(body.amount);
 
   if (!title || !artist) {
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
         quantity: 1,
       },
     ],
-    metadata: { title, artist, name, tipCents: String(amountCents) },
+    metadata: { title, artist, name, message, tipCents: String(amountCents) },
     success_url: `${origin}/request?tipped=1`,
     cancel_url: `${origin}/request?cancelled=1`,
   });
