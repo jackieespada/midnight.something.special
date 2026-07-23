@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     const title = meta.title || "";
     const artist = meta.artist || "";
     const name = meta.name || "";
+    const message = meta.message || "";
     const tipCents = Number(meta.tipCents || 0);
 
     if (title && artist) {
@@ -36,6 +37,7 @@ export async function POST(req: Request) {
         title,
         artist,
         name: name || undefined,
+        message: message || undefined,
         ts: Date.now(),
         tipped: true,
         tipCents,
