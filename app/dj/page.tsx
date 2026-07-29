@@ -44,6 +44,15 @@ export default function DjPage() {
     load();
   }
 
+  async function boostToFront(index: number) {
+    await fetch("/api/queue-boost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ index }),
+    });
+    load();
+  }
+  
   async function addManual() {
     setManualError("");
     if (!manualTitle.trim() || !manualArtist.trim()) {
@@ -138,7 +147,7 @@ export default function DjPage() {
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
             {state.queue.map((r, i) => (
               <li key={i} style={{ padding: "8px 0", borderBottom: "1px solid var(--wire)", fontSize: 14 }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span>
                     {i === 0 ? "▶ " : ""}
                     {r.tipped && (
@@ -146,7 +155,23 @@ export default function DjPage() {
                     )}
                     {r.title} — {r.artist}
                   </span>
-                  <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
+                    <button
+                      style={{
+                        background: "transparent",
+                        border: "1px solid var(--gold)",
+                        color: "var(--gold)",
+                        borderRadius: 8,
+                        padding: "3px 8px",
+                        fontSize: 11,
+                        cursor: "pointer",
+                      }}
+                      onClick={() => boostToFront(i)}
+                    >
+                      ⬆ Boost
+                    </button>
+                  </span>
                 </div>
                 {r.message && (
                   <div style={{ color: "var(--gold)", fontSize: 12, marginTop: 2, fontStyle: "italic" }}>
