@@ -3,7 +3,47 @@
 import { useEffect, useState } from "react";
 import type { ShowState } from "../../lib/state";
 
+type ShowId = "midnight-something-special" | "hooks-harmony";
+
+const SHOWS: { id: ShowId; label: string; apiBase: string; theme: React.CSSProperties }[] = [
+  {
+    id: "midnight-something-special",
+    label: "Midnight Special",
+    apiBase: "/api",
+    theme: {
+      "--stage": "#1f130f",
+      "--stage2": "#2a1a13",
+      "--haze": "#692dad",
+      "--wire": "#5a3a24",
+      "--live": "#4bc4d1",
+      "--signal": "#c104b0",
+      "--gold": "#e8a13c",
+      "--ink": "#fbeedd",
+      "--ink-dim": "#c2a488",
+    } as React.CSSProperties,
+  },
+  {
+    id: "hooks-harmony",
+    label: "Hooks + Harmony",
+    apiBase: "/api/hooks-harmony",
+    theme: {
+      "--stage": "#0d1117",
+      "--stage2": "#161c26",
+      "--haze": "#692dad",
+      "--wire": "#234249",
+      "--live": "#00c3da",
+      "--signal": "#c401b0",
+      "--gold": "#00c3da",
+      "--ink": "#eaf6f8",
+      "--ink-dim": "#7fa3ab",
+    } as React.CSSProperties,
+  },
+];
+
 export default function DjPage() {
+  const [showId, setShowId] = useState<ShowId>("midnight-something-special");
+  const show = SHOWS.find((s) => s.id === showId)!;
+
   const [state, setState] = useState<ShowState | null>(null);
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
@@ -17,19 +57,31 @@ export default function DjPage() {
   const [copyLabel, setCopyLabel] = useState("Copy setlist");
 
   async function load() {
-    const res = await fetch("/api/state");
+    const res = await fetch(`${show.apiBase}/state`);
     const data = await res.json();
     setState(data);
   }
 
+  // Reload whenever the selected show changes, and clear anything that
+  // was specific to the previously selected show's in-progress edits.
   useEffect(() => {
+    setState(null);
+    setTitle("");
+    setArtist("");
+    setManualTitle("");
+    setManualArtist("");
+    setManualName("");
+    setManualMessage("");
+    setManualError("");
+    setCopyLabel("Copy setlist");
     load();
     const id = setInterval(load, 4000);
     return () => clearInterval(id);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showId]);
 
   async function saveNowPlaying() {
-    await fetch("/api/now-playing", {
+    await fetch(`${show.apiBase}/now-playing`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, artist }),
@@ -40,26 +92,26 @@ export default function DjPage() {
   }
 
   async function advance() {
-    await fetch("/api/advance", { method: "POST" });
+    await fetch(`${show.apiBase}/advance`, { method: "POST" });
     load();
   }
 
   async function boostToFront(index: number) {
-    await fetch("/api/queue-boost", {
+    await fetch(`${show.apiBase}/queue-boost`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ index }),
     });
     load();
   }
-  
+
   async function addManual() {
     setManualError("");
     if (!manualTitle.trim() || !manualArtist.trim()) {
       setManualError("Song and artist are required.");
       return;
     }
-    const res = await fetch("/api/manual-add", {
+    const res = await fetch(`${show.apiBase}/manual-add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage }),
@@ -77,8 +129,8 @@ export default function DjPage() {
   }
 
   async function startNewEpisode() {
-    if (!confirm("Archive this episode's setlist and start fresh for next week?")) return;
-    await fetch("/api/new-episode", { method: "POST" });
+    if (!confirm(`Archive ${show.label}'s setlist and start fresh for next episode?`)) return;
+    await fetch(`${show.apiBase}/new-episode`, { method: "POST" });
     load();
   }
 
@@ -97,7 +149,29 @@ export default function DjPage() {
   const queueCount = state?.queue?.length || 0;
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
+    <div style={{ ...show.theme, maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+        {SHOWS.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setShowId(s.id)}
+            style={{
+              flex: 1,
+              padding: "10px 12px",
+              borderRadius: 999,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              border: s.id === showId ? "1px solid var(--gold)" : "1px solid var(--wire)",
+              background: s.id === showId ? "rgba(255,255,255,.06)" : "transparent",
+              color: s.id === showId ? "var(--gold)" : "var(--ink-dim)",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       <h1 style={{ fontSize: 24 }}>DJ control panel</h1>
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22 }}>
         Not linked from anywhere public — keep this URL to yourself. Advance the queue here while you're live.
@@ -116,8 +190,8 @@ export default function DjPage() {
             style={{
               marginTop: 10,
               padding: "10px 12px",
-              background: "rgba(232,161,60,.1)",
-              border: "1px solid rgba(232,161,60,.35)",
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid var(--wire)",
               borderRadius: 10,
               fontSize: 14,
               fontStyle: "italic",
@@ -188,7 +262,9 @@ export default function DjPage() {
       </div>
 
       <div style={cardStyle}>
-        <div style={labelStyle}>Add a request manually (e.g. from Rumble chat)</div>
+        <div style={labelStyle}>
+          Add a request manually {show.id === "midnight-something-special" ? "(e.g. from Rumble chat)" : "(e.g. from Rumble chat)"}
+        </div>
         <input style={inputStyle} value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder="Song title" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualArtist} onChange={(e) => setManualArtist(e.target.value)} placeholder="Artist" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Name (optional)" />
@@ -202,7 +278,7 @@ export default function DjPage() {
       <div style={cardStyle}>
         <div style={labelStyle}>Tonight's setlist so far ({state?.history?.length || 0} played)</div>
         {!state?.history?.length ? (
-          <div style={{ color: "var(--ink-dim)", fontSize: 13 }}>Nothing played yet tonight.</div>
+          <div style={{ color: "var(--ink-dim)", fontSize: 13 }}>Nothing played yet.</div>
         ) : (
           <ol style={{ margin: "0 0 12px", paddingLeft: 20, fontSize: 14 }}>
             {state.history.map((s, i) => (

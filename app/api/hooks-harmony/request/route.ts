@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { getState, setState, MAX_QUEUE } from "../../../lib/state";
+import { getState, setState, MAX_QUEUE } from "../../../../lib/state";
 
-const SHOW = "midnight-something-special" as const;
+const SHOW = "hooks-harmony" as const;
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -14,7 +14,10 @@ export async function POST(req: Request) {
   }
   const state = await getState(SHOW);
   if (state.queue.length >= MAX_QUEUE) {
-    return NextResponse.json({ error: "Queue is at the cap already." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Requests are full for tonight — but you can still tip to jump the line!" },
+      { status: 400 }
+    );
   }
   state.queue.push({
     title,

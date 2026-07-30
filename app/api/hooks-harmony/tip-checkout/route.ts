@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const SHOW = "midnight-something-special";
+const SHOW = "hooks-harmony";
 
 export async function POST(req: Request) {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -38,8 +38,8 @@ export async function POST(req: Request) {
       },
     ],
     metadata: { show: SHOW, title, artist, name, message, tipCents: String(amountCents) },
-    success_url: `${origin}/request?tipped=1`,
-    cancel_url: `${origin}/request?cancelled=1`,
+    success_url: `${origin}/hooks-harmony/request?tipped=1`,
+    cancel_url: `${origin}/hooks-harmony/request?cancelled=1`,
   });
   return NextResponse.json({ url: session.url });
 }
