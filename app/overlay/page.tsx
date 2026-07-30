@@ -85,7 +85,7 @@ export default function OverlayPage() {
             <span style={tagStyle}>Request</span>
           </div>
           {qrDataUrl && <img src={qrDataUrl} alt="QR code to request a song" style={{ width: "100%", borderRadius: 6 }} />}
-          <div style={{ color: "var(--ink-dim)", fontSize: 14, marginTop: 10, wordBreak: "break-all" }}>{requestUrl.replace(/^https?:\/\//, "")}</div>
+          <div style={{ color: "var(--ink-dim)", fontSize: 14, marginTop: 10, wordBreak: "break-all" }}>jackieespada.com/request</div>
         </div>
       </div>
     </div>
