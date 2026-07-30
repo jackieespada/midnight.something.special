@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import type { ShowState } from "../../lib/state";
 
 // Set this to your real request page URL once deployed, e.g.
 // https://midnightsomethingspecial.vercel.app/request
-const REQUEST_URL_FALLBACK = "https://jackieespada.com/request";
+const REQUEST_URL_FALLBACK = "https://jackieespada.com/request?show=midnight-something-special";
 
 export default function OverlayPage() {
   const [state, setState] = useState<ShowState | null>(null);
@@ -15,7 +15,7 @@ export default function OverlayPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setRequestUrl(`${window.location.origin}/request`);
+      setRequestUrl(`${window.location.origin}/request?show=midnight-something-special`);
     }
   }, []);
 
@@ -40,12 +40,10 @@ export default function OverlayPage() {
   return (
     <div style={{ width: "1920px", height: "1080px", position: "relative", background: "transparent", overflow: "hidden" }}>
       <video autoPlay muted loop playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}>
-        {/* Put your background video at /public/bg.webm */}
         <source src="/bg.webm" type="video/webm" />
       </video>
 
       <div style={{ position: "absolute", inset: 0 }}>
-        {/* Left panel: now playing / last played / up next */}
         <div style={panelStyle("left")}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
             <span style={dotStyle} />
@@ -81,7 +79,6 @@ export default function OverlayPage() {
           </div>
         </div>
 
-        {/* Right panel: QR code */}
         <div style={panelStyle("right")}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 8 }}>
             <span style={dotStyle} />

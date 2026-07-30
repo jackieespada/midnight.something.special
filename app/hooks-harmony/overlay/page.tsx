@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import type { ShowState } from "../../../lib/state";
 
-const REQUEST_URL_FALLBACK = "https://jackieespada.com/hooks-harmony/request";
+const REQUEST_URL_FALLBACK = "https://jackieespada.com/request?show=hooks-harmony";
 
 const hhTheme = {
   "--stage": "#0d1117",
@@ -25,7 +25,7 @@ export default function HooksHarmonyOverlayPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      setRequestUrl(`${window.location.origin}/hooks-harmony/request`);
+      setRequestUrl(`${window.location.origin}/request?show=hooks-harmony`);
     }
   }, []);
 

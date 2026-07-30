@@ -38,8 +38,8 @@ export async function POST(req: Request) {
       },
     ],
     metadata: { show: SHOW, title, artist, name, message, tipCents: String(amountCents) },
-    success_url: `${origin}/request?tipped=1`,
-    cancel_url: `${origin}/request?cancelled=1`,
+    success_url: `${origin}/request?show=${SHOW}&tipped=1`,
+    cancel_url: `${origin}/request?show=${SHOW}&cancelled=1`,
   });
   return NextResponse.json({ url: session.url });
 }
