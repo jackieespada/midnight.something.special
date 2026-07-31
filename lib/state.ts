@@ -9,6 +9,7 @@ export type ShowState = {
   queue: Request[];
   history: PlayedSong[];
   episodes: Episode[];
+  theme?: string;
 };
 
 export const MAX_QUEUE = 25;

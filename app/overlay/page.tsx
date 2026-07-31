@@ -45,6 +45,24 @@ export default function OverlayPage() {
 
       <div style={{ position: "absolute", inset: 0 }}>
         <div style={panelStyle("left")}>
+          {state?.theme && (
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                letterSpacing: ".06em",
+                textTransform: "uppercase",
+                color: "#1a0f08",
+                background: "var(--gold)",
+                borderRadius: 999,
+                padding: "4px 12px",
+                display: "inline-block",
+                marginBottom: 10,
+              }}
+            >
+              {state.theme}
+            </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
             <span style={dotStyle} />
             <span style={tagStyle}>Now playing</span>

@@ -81,6 +81,7 @@ export default function RequestPage() {
   const [message, setMessage] = useState("");
   const [tipAmount, setTipAmount] = useState("");
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
+  const [theme, setTheme] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [tipStatus, setTipStatus] = useState<"tipped" | "cancelled" | null>(null);
@@ -98,6 +99,7 @@ export default function RequestPage() {
     const res = await fetch(`${show.apiBase}/state`);
     const data = await res.json();
     setQueue(data.queue || []);
+    setTheme(data.theme || "");
   }
 
   useEffect(() => {
@@ -207,6 +209,25 @@ export default function RequestPage() {
           </button>
         ))}
       </div>
+
+      {theme && (
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: 13,
+            fontWeight: 700,
+            letterSpacing: ".08em",
+            textTransform: "uppercase",
+            color: "var(--gold)",
+            border: "1px solid var(--gold)",
+            borderRadius: 999,
+            padding: "8px 14px",
+            marginBottom: 14,
+          }}
+        >
+          Tonight's theme: {theme}
+        </div>
+      )}
 
       <div
         style={{

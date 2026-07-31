@@ -56,10 +56,14 @@ export default function DjPage() {
 
   const [copyLabel, setCopyLabel] = useState("Copy setlist");
 
+  const [themeInput, setThemeInput] = useState("");
+  const [themeSaved, setThemeSaved] = useState(false);
+
   async function load() {
     const res = await fetch(`${show.apiBase}/state`);
     const data = await res.json();
     setState(data);
+    setThemeInput(data.theme || "");
   }
 
   // Reload whenever the selected show changes, and clear anything that
@@ -74,11 +78,24 @@ export default function DjPage() {
     setManualMessage("");
     setManualError("");
     setCopyLabel("Copy setlist");
+    setThemeInput("");
+    setThemeSaved(false);
     load();
     const id = setInterval(load, 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showId]);
+
+  async function saveTheme() {
+    await fetch(`${show.apiBase}/theme`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ theme: themeInput }),
+    });
+    setThemeSaved(true);
+    setTimeout(() => setThemeSaved(false), 2000);
+    load();
+  }
 
   async function saveNowPlaying() {
     await fetch(`${show.apiBase}/now-playing`, {
@@ -176,6 +193,20 @@ export default function DjPage() {
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22 }}>
         Not linked from anywhere public — keep this URL to yourself. Advance the queue here while you're live.
       </p>
+
+      <div style={cardStyle}>
+        <div style={labelStyle}>Theme for this episode ({show.label})</div>
+        <input
+          style={inputStyle}
+          value={themeInput}
+          onChange={(e) => setThemeInput(e.target.value.slice(0, 80))}
+          placeholder="e.g. Christmas in July, Songs of Summer"
+        />
+        <button style={ghostBtnStyle} onClick={saveTheme}>
+          Save theme
+        </button>
+        {themeSaved && <div style={{ marginTop: 10, fontSize: 13, color: "var(--gold)" }}>Saved — now showing on the request page and overlay.</div>}
+      </div>
 
       <div style={cardStyle}>
         <div style={labelStyle}>Now playing</div>
