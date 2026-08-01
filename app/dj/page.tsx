@@ -53,6 +53,7 @@ export default function DjPage() {
   const [manualArtist, setManualArtist] = useState("");
   const [manualName, setManualName] = useState("");
   const [manualMessage, setManualMessage] = useState("");
+  const [manualVideoLink, setManualVideoLink] = useState("");
   const [manualError, setManualError] = useState("");
 
   const [copyLabel, setCopyLabel] = useState("Copy setlist");
@@ -81,6 +82,7 @@ export default function DjPage() {
     setManualArtist("");
     setManualName("");
     setManualMessage("");
+    setManualVideoLink("");
     setManualError("");
     setCopyLabel("Copy setlist");
     setThemeInput("");
@@ -137,7 +139,7 @@ export default function DjPage() {
     const res = await fetch(`${show.apiBase}/manual-add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage }),
+      body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage, videoLink: manualVideoLink }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -148,6 +150,7 @@ export default function DjPage() {
     setManualArtist("");
     setManualName("");
     setManualMessage("");
+    setManualVideoLink("");
     load();
   }
 
@@ -291,6 +294,14 @@ export default function DjPage() {
             📖 Read on air: "{state.nowPlaying.message}"
           </div>
         )}
+        {state?.nowPlaying?.videoLink && (
+          <div style={{ marginTop: 8, fontSize: 13 }}>
+            🎬{" "}
+            <a href={state.nowPlaying.videoLink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)", wordBreak: "break-all" }}>
+              {state.nowPlaying.videoLink}
+            </a>
+          </div>
+        )}
 
         <div style={{ height: 1, background: "var(--wire)", margin: "16px 0" }} />
 
@@ -343,6 +354,14 @@ export default function DjPage() {
                     💬 {r.message}
                   </div>
                 )}
+                {r.videoLink && (
+                  <div style={{ fontSize: 12, marginTop: 2 }}>
+                    🎬{" "}
+                    <a href={r.videoLink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)", wordBreak: "break-all" }}>
+                      {r.videoLink}
+                    </a>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -360,6 +379,7 @@ export default function DjPage() {
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualArtist} onChange={(e) => setManualArtist(e.target.value)} placeholder="Artist" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Name (optional)" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualMessage} onChange={(e) => setManualMessage(e.target.value)} placeholder="Message to read (optional)" />
+        <input style={{ ...inputStyle, marginTop: 8 }} value={manualVideoLink} onChange={(e) => setManualVideoLink(e.target.value)} placeholder="Video link (optional)" />
         <button style={ghostBtnStyle} onClick={addManual}>
           Add to queue
         </button>

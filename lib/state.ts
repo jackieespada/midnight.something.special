@@ -1,7 +1,7 @@
 export type Song = { title: string; artist: string };
-export type NowPlaying = Song & { name?: string; message?: string };
-export type Request = Song & { name?: string; message?: string; ts: number; tipped?: boolean; tipCents?: number };
-export type PlayedSong = Song & { name?: string; ts: number };
+export type NowPlaying = Song & { name?: string; message?: string; videoLink?: string };
+export type Request = Song & { name?: string; message?: string; ts: number; tipped?: boolean; tipCents?: number; videoLink?: string };
+export type PlayedSong = Song & { name?: string; ts: number; videoLink?: string };
 export type Episode = { date: string; songs: PlayedSong[] };
 export type ShowState = {
   nowPlaying: NowPlaying;

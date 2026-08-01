@@ -14,6 +14,7 @@ export async function POST() {
       title: state.nowPlaying.title,
       artist: state.nowPlaying.artist,
       name: state.nowPlaying.name,
+      videoLink: state.nowPlaying.videoLink,
       ts: Date.now(),
     });
   }
@@ -23,6 +24,7 @@ export async function POST() {
     artist: next.artist,
     name: next.name,
     message: next.message,
+    videoLink: next.videoLink,
   };
   await setState(SHOW, state);
   return NextResponse.json({ ok: true, state });

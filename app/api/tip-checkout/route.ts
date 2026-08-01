@@ -14,6 +14,7 @@ export async function POST(req: Request) {
   const artist = (body.artist || "").toString().trim();
   const name = (body.name || "").toString().trim();
   const message = (body.message || "").toString().trim().slice(0, 200);
+  const videoLink = (body.videoLink || "").toString().trim().slice(0, 500);
   const amount = Number(body.amount);
   if (!title || !artist) {
     return NextResponse.json({ error: "title and artist are required" }, { status: 400 });
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
         quantity: 1,
       },
     ],
-    metadata: { show: SHOW, title, artist, name, message, tipCents: String(amountCents) },
+    metadata: { show: SHOW, title, artist, name, message, videoLink, tipCents: String(amountCents) },
     success_url: `${origin}/request?show=${SHOW}&tipped=1`,
     cancel_url: `${origin}/request?show=${SHOW}&cancelled=1`,
   });

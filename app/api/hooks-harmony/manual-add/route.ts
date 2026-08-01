@@ -9,6 +9,7 @@ export async function POST(req: Request) {
   const artist = (body.artist || "").toString().trim();
   const name = (body.name || "").toString().trim();
   const message = (body.message || "").toString().trim().slice(0, 200);
+  const videoLink = (body.videoLink || "").toString().trim().slice(0, 500);
   if (!title || !artist) {
     return NextResponse.json({ error: "title and artist are required" }, { status: 400 });
   }
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
     artist,
     name: name || undefined,
     message: message || undefined,
+    videoLink: videoLink || undefined,
     ts: Date.now(),
   });
   await setState(SHOW, state);

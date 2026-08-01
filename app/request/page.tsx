@@ -79,6 +79,7 @@ export default function RequestPage() {
   const [artist, setArtist] = useState("");
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
+  const [videoLink, setVideoLink] = useState("");
   const [tipAmount, setTipAmount] = useState("");
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
   const [theme, setTheme] = useState("");
@@ -122,6 +123,7 @@ export default function RequestPage() {
     setArtist("");
     setName("");
     setMessage("");
+    setVideoLink("");
     setTipAmount("");
     setSubmitError("");
     setTipError("");
@@ -139,7 +141,7 @@ export default function RequestPage() {
     const res = await fetch(`${show.apiBase}/request`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: song, artist, name, message }),
+      body: JSON.stringify({ title: song, artist, name, message, videoLink }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -150,6 +152,7 @@ export default function RequestPage() {
     setArtist("");
     setName("");
     setMessage("");
+    setVideoLink("");
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2500);
     loadQueue();
@@ -171,7 +174,7 @@ export default function RequestPage() {
       const res = await fetch(`${show.apiBase}/tip-checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: song, artist, name, message, amount }),
+        body: JSON.stringify({ title: song, artist, name, message, amount, videoLink }),
       });
       const data = await res.json();
       if (data.url) {
@@ -210,6 +213,24 @@ export default function RequestPage() {
         ))}
       </div>
 
+      <div
+        style={{
+          border: "2px solid var(--gold)",
+          borderRadius: 16,
+          overflow: "hidden",
+          marginBottom: 20,
+          boxShadow: "0 6px 20px rgba(0,0,0,.4)",
+        }}
+      >
+        <img src={show.thumbnail.src} alt={show.thumbnail.alt} style={{ display: "block", width: "100%" }} />
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--gold)", fontSize: 12, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", marginBottom: 8 }}>
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 8px var(--gold)", animation: "pulse 1.6s infinite" }} />
+        {show.tagline}
+      </div>
+      <h1 style={{ fontSize: 24, margin: "0 0 4px" }}>Request the next song</h1>
+
       {theme && (
         <div
           style={{
@@ -229,23 +250,6 @@ export default function RequestPage() {
         </div>
       )}
 
-      <div
-        style={{
-          border: "2px solid var(--gold)",
-          borderRadius: 16,
-          overflow: "hidden",
-          marginBottom: 20,
-          boxShadow: "0 6px 20px rgba(0,0,0,.4)",
-        }}
-      >
-        <img src={show.thumbnail.src} alt={show.thumbnail.alt} style={{ display: "block", width: "100%" }} />
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--gold)", fontSize: 12, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", marginBottom: 8 }}>
-        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 8px var(--gold)", animation: "pulse 1.6s infinite" }} />
-        {show.tagline}
-      </div>
-      <h1 style={{ fontSize: 24, margin: "0 0 4px" }}>Request the next song</h1>
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22, lineHeight: 1.5 }}>
         Type a song and artist. It drops into the queue and shows up on stream. Add a tip to bump your song ahead of the regular line.
       </p>
@@ -274,6 +278,13 @@ export default function RequestPage() {
           value={message}
           onChange={(e) => setMessage(e.target.value.slice(0, 200))}
           placeholder={show.messagePlaceholder}
+        />
+        <label style={labelStyle}>Link to your video (optional)</label>
+        <input
+          style={inputStyle}
+          value={videoLink}
+          onChange={(e) => setVideoLink(e.target.value.slice(0, 500))}
+          placeholder="Paste a YouTube or video link here"
         />
         <button style={btnStyle} onClick={submit}>
           Submit request
