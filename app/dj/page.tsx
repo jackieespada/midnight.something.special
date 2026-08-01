@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ShowState } from "../../lib/state";
 
 type ShowId = "midnight-something-special" | "hooks-harmony";
@@ -58,12 +58,16 @@ export default function DjPage() {
 
   const [themeInput, setThemeInput] = useState("");
   const [themeSaved, setThemeSaved] = useState(false);
+  const themeInitialized = useRef(false);
 
   async function load() {
     const res = await fetch(`${show.apiBase}/state`);
     const data = await res.json();
     setState(data);
-    setThemeInput(data.theme || "");
+    if (!themeInitialized.current) {
+      setThemeInput(data.theme || "");
+      themeInitialized.current = true;
+    }
   }
 
   // Reload whenever the selected show changes, and clear anything that
@@ -80,6 +84,7 @@ export default function DjPage() {
     setCopyLabel("Copy setlist");
     setThemeInput("");
     setThemeSaved(false);
+    themeInitialized.current = false;
     load();
     const id = setInterval(load, 4000);
     return () => clearInterval(id);
