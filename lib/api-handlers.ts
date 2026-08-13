@@ -196,7 +196,7 @@ export function themeHandler(showId: ShowId) {
     const theme = (body.theme || "").toString().trim().slice(0, 120);
 
     const state = await getState(showId);
-    state.episodeTheme = theme;
+    state.theme = theme;
     await setState(showId, state);
 
     return NextResponse.json({ ok: true, state });

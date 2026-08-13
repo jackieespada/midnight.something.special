@@ -40,7 +40,7 @@ export default function DjPage() {
     const data = await res.json();
     setState(data);
     setLocalQueue(data.queue || []);
-    setThemeInput(data.episodeTheme || "");
+    setThemeInput(data.theme || "");
   }
 
   useEffect(() => {

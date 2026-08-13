@@ -13,7 +13,7 @@ export type ShowState = {
   history: PlayedSong[];
   episodes: Episode[];
   submitterCounts: Record<string, number>;
-  episodeTheme?: string;
+  theme?: string;
 };
 
 export const MAX_QUEUE = 20;
@@ -85,7 +85,7 @@ export async function getState(showId: ShowId): Promise<ShowState> {
         if (!parsed.history) parsed.history = [];
         if (!parsed.episodes) parsed.episodes = [];
         if (!parsed.submitterCounts) parsed.submitterCounts = {};
-        if (parsed.episodeTheme === undefined) parsed.episodeTheme = "";
+        if (parsed.theme === undefined) parsed.theme = "";
         return parsed;
       }
     } catch {

@@ -28,7 +28,7 @@ export default function RequestPage() {
   const [message, setMessage] = useState("");
   const [tipAmount, setTipAmount] = useState("");
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
-  const [episodeTheme, setEpisodeTheme] = useState("");
+  const [theme, setEpisodeTheme] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [tipStatus, setTipStatus] = useState<"tipped" | "cancelled" | null>(null);
@@ -49,7 +49,7 @@ export default function RequestPage() {
     const res = await fetch(`${apiPrefix}/state`);
     const data = await res.json();
     setQueue(data.queue || []);
-    setEpisodeTheme(data.episodeTheme || "");
+    setEpisodeTheme(data.theme || "");
   }
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function RequestPage() {
         Live now
       </div>
       <h1 style={{ fontSize: 24, margin: "0 0 4px" }}>Request the next song</h1>
-      {episodeTheme && (
+      {theme && (
         <div
           style={{
             display: "inline-block",
@@ -175,7 +175,7 @@ export default function RequestPage() {
             fontWeight: 600,
           }}
         >
-          🎨 Tonight's theme: {episodeTheme}
+          🎨 Tonight's theme: {theme}
         </div>
       )}
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22, lineHeight: 1.5 }}>
