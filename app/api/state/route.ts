@@ -1,9 +1,3 @@
-import { NextResponse } from "next/server";
-import { getState } from "../../../lib/state";
-
+import { stateHandler } from "../../../lib/api-handlers";
 export const dynamic = "force-dynamic";
-
-export async function GET() {
-  const state = await getState();
-  return NextResponse.json(state);
-}
+export const GET = stateHandler("midnight-something-special");

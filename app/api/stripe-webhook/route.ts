@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getState, setState, insertTippedRequest } from "../../../lib/state";
+import { getState, setState, insertTippedRequest, ShowId } from "../../../lib/state";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +25,7 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const meta = session.metadata || {};
+    const showId: ShowId = meta.show === "hooks-harmony" ? "hooks-harmony" : "midnight-something-special";
     const title = meta.title || "";
     const artist = meta.artist || "";
     const name = meta.name || "";
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     const tipCents = Number(meta.tipCents || 0);
 
     if (title && artist) {
-      const state = await getState();
+      const state = await getState(showId);
       state.queue = insertTippedRequest(state.queue, {
         title,
         artist,
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
         tipped: true,
         tipCents,
       });
-      await setState(state);
+      await setState(showId, state);
     }
   }
 

@@ -3,10 +3,19 @@
 import { useEffect, useState } from "react";
 import type { ShowState, Request as QueuedRequest } from "../../lib/state";
 
+type ShowId = "midnight-something-special" | "hooks-harmony";
+
+const SHOW_LABELS: Record<ShowId, string> = {
+  "midnight-something-special": "The Midnight Something Special",
+  "hooks-harmony": "Hooks + Harmony",
+};
+
 export default function DjPage() {
+  const [show, setShow] = useState<ShowId>("midnight-something-special");
   const [state, setState] = useState<ShowState | null>(null);
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
+  const [themeInput, setThemeInput] = useState("");
 
   const [manualTitle, setManualTitle] = useState("");
   const [manualArtist, setManualArtist] = useState("");
@@ -16,26 +25,39 @@ export default function DjPage() {
 
   const [copyLabel, setCopyLabel] = useState("Copy setlist");
 
-  // Local queue used only for smooth drag-and-drop; synced from server state,
-  // and pushed back to the server the moment a drag ends.
   const [localQueue, setLocalQueue] = useState<QueuedRequest[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
+  const apiPrefix = show === "hooks-harmony" ? "/api/hooks-harmony" : "/api";
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("show") === "hooks-harmony") setShow("hooks-harmony");
+  }, []);
+
   async function load() {
-    const res = await fetch("/api/state");
+    const res = await fetch(`${apiPrefix}/state`);
     const data = await res.json();
     setState(data);
     setLocalQueue(data.queue || []);
+    setThemeInput(data.episodeTheme || "");
   }
 
   useEffect(() => {
     load();
     const id = setInterval(load, 4000);
     return () => clearInterval(id);
-  }, []);
+  }, [show]);
+
+  function switchShow(next: ShowId) {
+    setShow(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set("show", next);
+    window.history.replaceState({}, "", url.toString());
+  }
 
   async function saveNowPlaying() {
-    await fetch("/api/now-playing", {
+    await fetch(`${apiPrefix}/now-playing`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, artist }),
@@ -45,13 +67,22 @@ export default function DjPage() {
     load();
   }
 
+  async function saveTheme() {
+    await fetch(`${apiPrefix}/theme`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ theme: themeInput }),
+    });
+    load();
+  }
+
   async function advance() {
-    await fetch("/api/advance", { method: "POST" });
+    await fetch(`${apiPrefix}/advance`, { method: "POST" });
     load();
   }
 
   async function boostToFront(index: number) {
-    await fetch("/api/queue-boost", {
+    await fetch(`${apiPrefix}/queue-boost`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ index }),
@@ -65,7 +96,7 @@ export default function DjPage() {
       setManualError("Song and artist are required.");
       return;
     }
-    const res = await fetch("/api/manual-add", {
+    const res = await fetch(`${apiPrefix}/manual-add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage }),
@@ -84,7 +115,7 @@ export default function DjPage() {
 
   async function startNewEpisode() {
     if (!confirm("Archive this episode's setlist and start fresh for next week?")) return;
-    await fetch("/api/new-episode", { method: "POST" });
+    await fetch(`${apiPrefix}/new-episode`, { method: "POST" });
     load();
   }
 
@@ -118,7 +149,7 @@ export default function DjPage() {
 
   async function handleDragEnd() {
     setDragIndex(null);
-    await fetch("/api/queue-reorder", {
+    await fetch(`${apiPrefix}/queue-reorder`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order: localQueue }),
@@ -130,10 +161,45 @@ export default function DjPage() {
 
   return (
     <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 20, background: "rgba(0,0,0,.25)", borderRadius: 14, padding: 5 }}>
+        {(Object.keys(SHOW_LABELS) as ShowId[]).map((s) => (
+          <button
+            key={s}
+            onClick={() => switchShow(s)}
+            style={{
+              flex: 1,
+              padding: "10px 8px",
+              borderRadius: 10,
+              border: "none",
+              fontSize: 12.5,
+              fontWeight: 700,
+              cursor: "pointer",
+              background: show === s ? "var(--gold)" : "transparent",
+              color: show === s ? "#1a0f08" : "var(--ink-dim)",
+            }}
+          >
+            {SHOW_LABELS[s]}
+          </button>
+        ))}
+      </div>
+
       <h1 style={{ fontSize: 24 }}>DJ control panel</h1>
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22 }}>
         Not linked from anywhere public — keep this URL to yourself. Advance the queue here while you're live.
       </p>
+
+      <div style={cardStyle}>
+        <div style={labelStyle}>Tonight's theme (shown on the request page)</div>
+        <input
+          style={inputStyle}
+          value={themeInput}
+          onChange={(e) => setThemeInput(e.target.value)}
+          placeholder="e.g. 80s Power Ballads"
+        />
+        <button style={ghostBtnStyle} onClick={saveTheme}>
+          Save theme
+        </button>
+      </div>
 
       <div style={cardStyle}>
         <div style={labelStyle}>Now playing</div>
