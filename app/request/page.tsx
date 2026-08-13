@@ -10,6 +10,23 @@ const SHOW_LABELS: Record<ShowId, string> = {
   "hooks-harmony": "Hooks + Harmony",
 };
 
+const SHOW_SCHEDULE: Record<ShowId, string> = {
+  "midnight-something-special": "Thursdays 12:30AM ET",
+  "hooks-harmony": "Saturdays 3PM ET",
+};
+
+// Overrides the shared CSS custom properties per show, since every color in
+// this page is already written as var(--gold) / var(--signal) / var(--haze) —
+// this just swaps what those variables point to based on which show is active.
+const SHOW_THEME: Record<ShowId, React.CSSProperties> = {
+  "midnight-something-special": {},
+  "hooks-harmony": {
+    ["--gold" as any]: "#00c3da",
+    ["--signal" as any]: "#c401b0",
+    ["--haze" as any]: "#692dad",
+  },
+};
+
 function getVisitorId(): string {
   if (typeof window === "undefined") return "";
   let id = window.localStorage.getItem("msss-visitor-id");
@@ -119,7 +136,7 @@ export default function RequestPage() {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh", ...SHOW_THEME[show] }}>
       <div style={{ display: "flex", gap: 6, marginBottom: 20, background: "rgba(0,0,0,.25)", borderRadius: 14, padding: 5 }}>
         {(Object.keys(SHOW_LABELS) as ShowId[]).map((s) => (
           <button
@@ -142,7 +159,7 @@ export default function RequestPage() {
         ))}
       </div>
 
-      {show === "midnight-something-special" && (
+      {show === "midnight-something-special" ? (
         <div
           style={{
             border: "2px solid var(--gold)",
@@ -154,11 +171,23 @@ export default function RequestPage() {
         >
           <img src="/thumbnail.jpg" alt="The Midnight Something Special" style={{ display: "block", width: "100%" }} />
         </div>
+      ) : (
+        <div
+          style={{
+            border: "2px solid var(--gold)",
+            borderRadius: 16,
+            overflow: "hidden",
+            marginBottom: 20,
+            boxShadow: "0 6px 20px rgba(0,0,0,.4)",
+          }}
+        >
+          <img src="/hooks-harmony-thumbnail.png" alt="Hooks + Harmony with Jackie Espada" style={{ display: "block", width: "100%" }} />
+        </div>
       )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--gold)", fontSize: 12, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", marginBottom: 8 }}>
-        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 8px var(--gold)", animation: "pulse 1.6s infinite" }} />
-        Live now
+        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gold)" }} />
+        Airs {SHOW_SCHEDULE[show]}
       </div>
       <h1 style={{ fontSize: 24, margin: "0 0 4px" }}>Request the next song</h1>
       {theme && (
