@@ -3,113 +3,40 @@
 import { useEffect, useState } from "react";
 import type { Request as QueuedRequest } from "../../lib/state";
 
-type ShowId = "midnight-something-special" | "hooks-harmony";
-
-const SHOWS: {
-  id: ShowId;
-  label: string;
-  tagline: string;
-  apiBase: string;
-  thumbnail: { type: "image"; src: string; alt: string };
-  songPlaceholder: string;
-  artistPlaceholder: string;
-  messageLabel: string;
-  messagePlaceholder: string;
-  theme: React.CSSProperties;
-}[] = [
-  {
-    id: "midnight-something-special",
-    label: "Midnight Special",
-    tagline: "Live Thursdays at 12:30AM ET on Rumble",
-    apiBase: "/api",
-    thumbnail: { type: "image", src: "/thumbnail.jpg", alt: "The Midnight Something Special" },
-    songPlaceholder: "e.g. Le Freak",
-    artistPlaceholder: "e.g. Chic",
-    messageLabel: "Message for me to read on air (optional, 200 characters)",
-    messagePlaceholder: "Shoutout, dedication, whatever you want me to say on stream",
-    theme: {
-      "--stage": "#1f130f",
-      "--stage2": "#2a1a13",
-      "--haze": "#692dad",
-      "--wire": "#5a3a24",
-      "--live": "#4bc4d1",
-      "--signal": "#c104b0",
-      "--gold": "#e8a13c",
-      "--ink": "#fbeedd",
-      "--ink-dim": "#c2a488",
-    } as React.CSSProperties,
-  },
-  {
-    id: "hooks-harmony",
-    label: "Hooks + Harmony",
-    tagline: "Live Saturdays at 3pm ET",
-    apiBase: "/api/hooks-harmony",
-    thumbnail: { type: "image", src: "/hooks-harmony-thumbnail.png", alt: "Hooks + Harmony with Jackie Espada" },
-    songPlaceholder: "e.g. Dancing Queen",
-    artistPlaceholder: "e.g. ABBA",
-    messageLabel: "Dedication or story (optional, 200 characters)",
-    messagePlaceholder: "Tell us why this song, or who it's for",
-    theme: {
-      "--stage": "#0d1117",
-      "--stage2": "#161c26",
-      "--haze": "#692dad",
-      "--wire": "#234249",
-      "--live": "#00c3da",
-      "--signal": "#c401b0",
-      "--gold": "#00c3da",
-      "--ink": "#eaf6f8",
-      "--ink-dim": "#7fa3ab",
-    } as React.CSSProperties,
-  },
-];
-
-function initialShowFromUrl(): ShowId {
-  if (typeof window === "undefined") return "midnight-something-special";
-  const params = new URLSearchParams(window.location.search);
-  const requested = params.get("show");
-  return requested === "hooks-harmony" ? "hooks-harmony" : "midnight-something-special";
+function getVisitorId(): string {
+  if (typeof window === "undefined") return "";
+  let id = window.localStorage.getItem("msss-visitor-id");
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    window.localStorage.setItem("msss-visitor-id", id);
+  }
+  return id;
 }
 
 export default function RequestPage() {
-  const [showId, setShowId] = useState<ShowId>("midnight-something-special");
-  const [hydrated, setHydrated] = useState(false);
-  const show = SHOWS.find((s) => s.id === showId)!;
-
   const [song, setSong] = useState("");
   const [artist, setArtist] = useState("");
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
-  const [videoLink, setVideoLink] = useState("");
   const [tipAmount, setTipAmount] = useState("");
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
-  const [theme, setTheme] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [tipStatus, setTipStatus] = useState<"tipped" | "cancelled" | null>(null);
   const [tipLoading, setTipLoading] = useState(false);
   const [tipError, setTipError] = useState("");
 
-  // Read ?show=hooks-harmony (or omit for Midnight Special) once on mount,
-  // so each show's own QR code / stream link opens directly on its tab.
-  useEffect(() => {
-    setShowId(initialShowFromUrl());
-    setHydrated(true);
-  }, []);
-
   async function loadQueue() {
-    const res = await fetch(`${show.apiBase}/state`);
+    const res = await fetch("/api/state");
     const data = await res.json();
     setQueue(data.queue || []);
-    setTheme(data.theme || "");
   }
 
   useEffect(() => {
-    if (!hydrated) return;
     loadQueue();
     const id = setInterval(loadQueue, 4000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showId, hydrated]);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -117,31 +44,13 @@ export default function RequestPage() {
     if (params.get("cancelled")) setTipStatus("cancelled");
   }, []);
 
-  function switchShow(id: ShowId) {
-    setShowId(id);
-    setSong("");
-    setArtist("");
-    setName("");
-    setMessage("");
-    setVideoLink("");
-    setTipAmount("");
-    setSubmitError("");
-    setTipError("");
-    setTipStatus(null);
-    const url = new URL(window.location.href);
-    url.searchParams.set("show", id);
-    url.searchParams.delete("tipped");
-    url.searchParams.delete("cancelled");
-    window.history.replaceState({}, "", url.toString());
-  }
-
   async function submit() {
     setSubmitError("");
     if (!song.trim() || !artist.trim()) return;
-    const res = await fetch(`${show.apiBase}/request`, {
+    const res = await fetch("/api/request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: song, artist, name, message, videoLink }),
+      body: JSON.stringify({ title: song, artist, name, message, visitorId: getVisitorId() }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -152,7 +61,6 @@ export default function RequestPage() {
     setArtist("");
     setName("");
     setMessage("");
-    setVideoLink("");
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2500);
     loadQueue();
@@ -171,10 +79,10 @@ export default function RequestPage() {
     }
     setTipLoading(true);
     try {
-      const res = await fetch(`${show.apiBase}/tip-checkout`, {
+      const res = await fetch("/api/tip-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: song, artist, name, message, amount, videoLink }),
+        body: JSON.stringify({ title: song, artist, name, message, amount }),
       });
       const data = await res.json();
       if (data.url) {
@@ -190,29 +98,7 @@ export default function RequestPage() {
   }
 
   return (
-    <div style={{ ...show.theme, maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {SHOWS.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => switchShow(s.id)}
-            style={{
-              flex: 1,
-              padding: "10px 12px",
-              borderRadius: 999,
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-              border: s.id === showId ? "1px solid var(--gold)" : "1px solid var(--wire)",
-              background: s.id === showId ? "rgba(255,255,255,.06)" : "transparent",
-              color: s.id === showId ? "var(--gold)" : "var(--ink-dim)",
-            }}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
       <div
         style={{
           border: "2px solid var(--gold)",
@@ -222,37 +108,16 @@ export default function RequestPage() {
           boxShadow: "0 6px 20px rgba(0,0,0,.4)",
         }}
       >
-        <img src={show.thumbnail.src} alt={show.thumbnail.alt} style={{ display: "block", width: "100%" }} />
+        <img src="/thumbnail.jpg" alt="The Midnight Something Special" style={{ display: "block", width: "100%" }} />
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--gold)", fontSize: 12, fontWeight: 700, letterSpacing: ".14em", textTransform: "uppercase", marginBottom: 8 }}>
         <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--gold)", boxShadow: "0 0 8px var(--gold)", animation: "pulse 1.6s infinite" }} />
-        {show.tagline}
+        Live now
       </div>
-
-      {theme && (
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: 13,
-            fontWeight: 700,
-            letterSpacing: ".08em",
-            textTransform: "uppercase",
-            color: "var(--gold)",
-            border: "1px solid var(--gold)",
-            borderRadius: 999,
-            padding: "8px 14px",
-            marginBottom: 14,
-          }}
-        >
-          Tonight's theme: {theme}
-        </div>
-      )}
-
       <h1 style={{ fontSize: 24, margin: "0 0 4px" }}>Request the next song</h1>
-
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22, lineHeight: 1.5 }}>
-        Type a song and artist. It drops into the queue and shows up on stream. Add a tip to bump your song ahead of the regular line.
+        Type a song and artist. It drops into the queue and shows up on stream. Limit 2 free requests per person — tip to add more or bump ahead of the line.
       </p>
 
       {tipStatus === "tipped" && (
@@ -268,24 +133,17 @@ export default function RequestPage() {
 
       <div style={cardStyle}>
         <label style={labelStyle}>Song title</label>
-        <input style={inputStyle} value={song} onChange={(e) => setSong(e.target.value)} placeholder={show.songPlaceholder} />
+        <input style={inputStyle} value={song} onChange={(e) => setSong(e.target.value)} placeholder="e.g. Le Freak" />
         <label style={labelStyle}>Artist</label>
-        <input style={inputStyle} value={artist} onChange={(e) => setArtist(e.target.value)} placeholder={show.artistPlaceholder} />
+        <input style={inputStyle} value={artist} onChange={(e) => setArtist(e.target.value)} placeholder="e.g. Chic" />
         <label style={labelStyle}>Your name (optional, shown on stream)</label>
         <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Jamie from Ohio" />
-        <label style={labelStyle}>{show.messageLabel}</label>
+        <label style={labelStyle}>Message for me to read on air (optional, 200 characters)</label>
         <textarea
           style={{ ...inputStyle, minHeight: 70, resize: "vertical", fontFamily: "inherit" }}
           value={message}
           onChange={(e) => setMessage(e.target.value.slice(0, 200))}
-          placeholder={show.messagePlaceholder}
-        />
-        <label style={labelStyle}>Link to your video (optional)</label>
-        <input
-          style={inputStyle}
-          value={videoLink}
-          onChange={(e) => setVideoLink(e.target.value.slice(0, 500))}
-          placeholder="Paste a YouTube or video link here"
+          placeholder="Shoutout, dedication, whatever you want me to say on stream"
         />
         <button style={btnStyle} onClick={submit}>
           Submit request
@@ -315,7 +173,7 @@ export default function RequestPage() {
 
       <div style={cardStyle}>
         <div style={{ fontSize: 10.5, color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>
-          Queue right now ({queue.length}/25)
+          Queue right now ({queue.length}/20)
         </div>
         {queue.length === 0 ? (
           <div style={{ color: "var(--ink-dim)", fontSize: 13, padding: "8px 0" }}>Nothing queued yet.</div>
