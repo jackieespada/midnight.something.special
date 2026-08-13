@@ -1,50 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { jsPDF } from "jspdf";
-import type { ShowState } from "../../lib/state";
-
-type ShowId = "midnight-something-special" | "hooks-harmony";
-
-const SHOWS: { id: ShowId; label: string; apiBase: string; theme: React.CSSProperties }[] = [
-  {
-    id: "midnight-something-special",
-    label: "Midnight Special",
-    apiBase: "/api",
-    theme: {
-      "--stage": "#1f130f",
-      "--stage2": "#2a1a13",
-      "--haze": "#692dad",
-      "--wire": "#5a3a24",
-      "--live": "#4bc4d1",
-      "--signal": "#c104b0",
-      "--gold": "#e8a13c",
-      "--ink": "#fbeedd",
-      "--ink-dim": "#c2a488",
-    } as React.CSSProperties,
-  },
-  {
-    id: "hooks-harmony",
-    label: "Hooks + Harmony",
-    apiBase: "/api/hooks-harmony",
-    theme: {
-      "--stage": "#0d1117",
-      "--stage2": "#161c26",
-      "--haze": "#692dad",
-      "--wire": "#234249",
-      "--live": "#00c3da",
-      "--signal": "#c401b0",
-      "--gold": "#00c3da",
-      "--ink": "#eaf6f8",
-      "--ink-dim": "#7fa3ab",
-    } as React.CSSProperties,
-  },
-];
+import { useEffect, useState } from "react";
+import type { ShowState, Request as QueuedRequest } from "../../lib/state";
 
 export default function DjPage() {
-  const [showId, setShowId] = useState<ShowId>("midnight-something-special");
-  const show = SHOWS.find((s) => s.id === showId)!;
-
   const [state, setState] = useState<ShowState | null>(null);
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
@@ -53,60 +12,30 @@ export default function DjPage() {
   const [manualArtist, setManualArtist] = useState("");
   const [manualName, setManualName] = useState("");
   const [manualMessage, setManualMessage] = useState("");
-  const [manualVideoLink, setManualVideoLink] = useState("");
   const [manualError, setManualError] = useState("");
 
   const [copyLabel, setCopyLabel] = useState("Copy setlist");
 
-  const [themeInput, setThemeInput] = useState("");
-  const [themeSaved, setThemeSaved] = useState(false);
-  const themeInitialized = useRef(false);
+  // Local queue used only for smooth drag-and-drop; synced from server state,
+  // and pushed back to the server the moment a drag ends.
+  const [localQueue, setLocalQueue] = useState<QueuedRequest[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   async function load() {
-    const res = await fetch(`${show.apiBase}/state`);
+    const res = await fetch("/api/state");
     const data = await res.json();
     setState(data);
-    if (!themeInitialized.current) {
-      setThemeInput(data.theme || "");
-      themeInitialized.current = true;
-    }
+    setLocalQueue(data.queue || []);
   }
 
-  // Reload whenever the selected show changes, and clear anything that
-  // was specific to the previously selected show's in-progress edits.
   useEffect(() => {
-    setState(null);
-    setTitle("");
-    setArtist("");
-    setManualTitle("");
-    setManualArtist("");
-    setManualName("");
-    setManualMessage("");
-    setManualVideoLink("");
-    setManualError("");
-    setCopyLabel("Copy setlist");
-    setThemeInput("");
-    setThemeSaved(false);
-    themeInitialized.current = false;
     load();
     const id = setInterval(load, 4000);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showId]);
-
-  async function saveTheme() {
-    await fetch(`${show.apiBase}/theme`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ theme: themeInput }),
-    });
-    setThemeSaved(true);
-    setTimeout(() => setThemeSaved(false), 2000);
-    load();
-  }
+  }, []);
 
   async function saveNowPlaying() {
-    await fetch(`${show.apiBase}/now-playing`, {
+    await fetch("/api/now-playing", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, artist }),
@@ -117,12 +46,12 @@ export default function DjPage() {
   }
 
   async function advance() {
-    await fetch(`${show.apiBase}/advance`, { method: "POST" });
+    await fetch("/api/advance", { method: "POST" });
     load();
   }
 
   async function boostToFront(index: number) {
-    await fetch(`${show.apiBase}/queue-boost`, {
+    await fetch("/api/queue-boost", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ index }),
@@ -136,10 +65,10 @@ export default function DjPage() {
       setManualError("Song and artist are required.");
       return;
     }
-    const res = await fetch(`${show.apiBase}/manual-add`, {
+    const res = await fetch("/api/manual-add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage, videoLink: manualVideoLink }),
+      body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -150,72 +79,17 @@ export default function DjPage() {
     setManualArtist("");
     setManualName("");
     setManualMessage("");
-    setManualVideoLink("");
     load();
   }
 
   async function startNewEpisode() {
-    if (!confirm(`Archive ${show.label}'s setlist and start fresh for next episode?`)) return;
-    await fetch(`${show.apiBase}/new-episode`, { method: "POST" });
+    if (!confirm("Archive this episode's setlist and start fresh for next week?")) return;
+    await fetch("/api/new-episode", { method: "POST" });
     load();
   }
 
   function formatSetlist(songs: { title: string; artist: string; name?: string }[]) {
     return songs.map((s, i) => `${i + 1}. ${s.title} — ${s.artist}${s.name ? ` (req. ${s.name})` : ""}`).join("\n");
-  }
-
-  function downloadSetlistPdf(
-    dateLabel: string,
-    songs: { title: string; artist: string; name?: string }[],
-    themeLabel?: string
-  ) {
-    const doc = new jsPDF({ unit: "pt", format: "letter" });
-    const marginLeft = 56;
-    let y = 64;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text(show.label, marginLeft, y);
-    y += 26;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.text(dateLabel, marginLeft, y);
-    y += 18;
-
-    if (themeLabel) {
-      doc.setFont("helvetica", "italic");
-      doc.text(`Theme: ${themeLabel}`, marginLeft, y);
-      y += 18;
-    }
-
-    y += 10;
-    doc.setDrawColor(200);
-    doc.line(marginLeft, y, 556, y);
-    y += 24;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    const lineHeight = 20;
-    const pageBottom = 740;
-
-    if (songs.length === 0) {
-      doc.text("Nothing played this episode.", marginLeft, y);
-    } else {
-      songs.forEach((s, i) => {
-        if (y > pageBottom) {
-          doc.addPage();
-          y = 64;
-        }
-        const line = `${i + 1}. ${s.title} — ${s.artist}${s.name ? `  (req. ${s.name})` : ""}`;
-        doc.text(line, marginLeft, y, { maxWidth: 500 });
-        y += lineHeight;
-      });
-    }
-
-    const safeDate = dateLabel.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-    const safeShow = show.id;
-    doc.save(`${safeShow}-setlist-${safeDate}.pdf`);
   }
 
   async function copySetlist() {
@@ -226,50 +100,40 @@ export default function DjPage() {
     setTimeout(() => setCopyLabel("Copy setlist"), 2000);
   }
 
+  function handleDragStart(index: number) {
+    setDragIndex(index);
+  }
+
+  function handleDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === index) return;
+    setLocalQueue((prev) => {
+      const updated = [...prev];
+      const [moved] = updated.splice(dragIndex, 1);
+      updated.splice(index, 0, moved);
+      return updated;
+    });
+    setDragIndex(index);
+  }
+
+  async function handleDragEnd() {
+    setDragIndex(null);
+    await fetch("/api/queue-reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order: localQueue }),
+    });
+    load();
+  }
+
   const queueCount = state?.queue?.length || 0;
 
   return (
-    <div style={{ ...show.theme, maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-        {SHOWS.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setShowId(s.id)}
-            style={{
-              flex: 1,
-              padding: "10px 12px",
-              borderRadius: 999,
-              fontSize: 13,
-              fontWeight: 700,
-              cursor: "pointer",
-              border: s.id === showId ? "1px solid var(--gold)" : "1px solid var(--wire)",
-              background: s.id === showId ? "rgba(255,255,255,.06)" : "transparent",
-              color: s.id === showId ? "var(--gold)" : "var(--ink-dim)",
-            }}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-
+    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh" }}>
       <h1 style={{ fontSize: 24 }}>DJ control panel</h1>
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22 }}>
         Not linked from anywhere public — keep this URL to yourself. Advance the queue here while you're live.
       </p>
-
-      <div style={cardStyle}>
-        <div style={labelStyle}>Theme for this episode ({show.label})</div>
-        <input
-          style={inputStyle}
-          value={themeInput}
-          onChange={(e) => setThemeInput(e.target.value.slice(0, 80))}
-          placeholder="e.g. Christmas in July, Songs of Summer"
-        />
-        <button style={ghostBtnStyle} onClick={saveTheme}>
-          Save theme
-        </button>
-        {themeSaved && <div style={{ marginTop: 10, fontSize: 13, color: "var(--gold)" }}>Saved — now showing on the request page and overlay.</div>}
-      </div>
 
       <div style={cardStyle}>
         <div style={labelStyle}>Now playing</div>
@@ -284,22 +148,14 @@ export default function DjPage() {
             style={{
               marginTop: 10,
               padding: "10px 12px",
-              background: "rgba(255,255,255,.06)",
-              border: "1px solid var(--wire)",
+              background: "rgba(232,161,60,.1)",
+              border: "1px solid rgba(232,161,60,.35)",
               borderRadius: 10,
               fontSize: 14,
               fontStyle: "italic",
             }}
           >
             📖 Read on air: "{state.nowPlaying.message}"
-          </div>
-        )}
-        {state?.nowPlaying?.videoLink && (
-          <div style={{ marginTop: 8, fontSize: 13 }}>
-            🎬{" "}
-            <a href={state.nowPlaying.videoLink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)", wordBreak: "break-all" }}>
-              {state.nowPlaying.videoLink}
-            </a>
           </div>
         )}
 
@@ -314,20 +170,34 @@ export default function DjPage() {
 
       <div style={cardStyle}>
         <div style={{ ...labelStyle, display: "flex", justifyContent: "space-between" }}>
-          <span>Pending queue</span>
-          <span style={{ color: queueCount >= 25 ? "var(--signal)" : "var(--ink-dim)" }}>{queueCount}/25</span>
+          <span>Pending queue (drag ☰ to reorder)</span>
+          <span style={{ color: queueCount >= 20 ? "var(--signal)" : "var(--ink-dim)" }}>{queueCount}/20</span>
         </div>
-        {!state?.queue?.length ? (
+        {!localQueue.length ? (
           <div style={{ color: "var(--ink-dim)", fontSize: 13 }}>Nothing queued.</div>
         ) : (
           <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-            {state.queue.map((r, i) => (
-              <li key={i} style={{ padding: "8px 0", borderBottom: "1px solid var(--wire)", fontSize: 14 }}>
+            {localQueue.map((r, i) => (
+              <li
+                key={`${r.ts}-${r.title}`}
+                draggable
+                onDragStart={() => handleDragStart(i)}
+                onDragOver={(e) => handleDragOver(e, i)}
+                onDragEnd={handleDragEnd}
+                style={{
+                  padding: "8px 0",
+                  borderBottom: "1px solid var(--wire)",
+                  fontSize: 14,
+                  opacity: dragIndex === i ? 0.4 : 1,
+                  cursor: "grab",
+                }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: "var(--ink-dim)" }}>☰</span>
                     {i === 0 ? "▶ " : ""}
                     {r.tipped && (
-                      <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)} </span>
+                      <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)}</span>
                     )}
                     {r.title} — {r.artist}
                   </span>
@@ -354,14 +224,6 @@ export default function DjPage() {
                     💬 {r.message}
                   </div>
                 )}
-                {r.videoLink && (
-                  <div style={{ fontSize: 12, marginTop: 2 }}>
-                    🎬{" "}
-                    <a href={r.videoLink} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)", wordBreak: "break-all" }}>
-                      {r.videoLink}
-                    </a>
-                  </div>
-                )}
               </li>
             ))}
           </ul>
@@ -372,14 +234,11 @@ export default function DjPage() {
       </div>
 
       <div style={cardStyle}>
-        <div style={labelStyle}>
-          Add a request manually {show.id === "midnight-something-special" ? "(e.g. from Rumble chat)" : "(e.g. from Rumble chat)"}
-        </div>
+        <div style={labelStyle}>Add a request manually (e.g. from Rumble chat)</div>
         <input style={inputStyle} value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder="Song title" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualArtist} onChange={(e) => setManualArtist(e.target.value)} placeholder="Artist" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Name (optional)" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualMessage} onChange={(e) => setManualMessage(e.target.value)} placeholder="Message to read (optional)" />
-        <input style={{ ...inputStyle, marginTop: 8 }} value={manualVideoLink} onChange={(e) => setManualVideoLink(e.target.value)} placeholder="Video link (optional)" />
         <button style={ghostBtnStyle} onClick={addManual}>
           Add to queue
         </button>
@@ -389,7 +248,7 @@ export default function DjPage() {
       <div style={cardStyle}>
         <div style={labelStyle}>Tonight's setlist so far ({state?.history?.length || 0} played)</div>
         {!state?.history?.length ? (
-          <div style={{ color: "var(--ink-dim)", fontSize: 13 }}>Nothing played yet.</div>
+          <div style={{ color: "var(--ink-dim)", fontSize: 13 }}>Nothing played yet tonight.</div>
         ) : (
           <ol style={{ margin: "0 0 12px", paddingLeft: 20, fontSize: 14 }}>
             {state.history.map((s, i) => (
@@ -403,13 +262,6 @@ export default function DjPage() {
         <button style={ghostBtnStyle} onClick={copySetlist} disabled={!state?.history?.length}>
           {copyLabel}
         </button>
-        <button
-          style={{ ...ghostBtnStyle, marginTop: 8 }}
-          onClick={() => downloadSetlistPdf(new Date().toISOString().slice(0, 10), state?.history || [], state?.theme)}
-          disabled={!state?.history?.length}
-        >
-          Download PDF
-        </button>
         <button style={{ ...btnStyle, marginTop: 8 }} onClick={startNewEpisode}>
           Start new episode (archive this setlist)
         </button>
@@ -420,23 +272,7 @@ export default function DjPage() {
           <div style={labelStyle}>Past episodes</div>
           {state.episodes.map((ep, i) => (
             <div key={i} style={{ marginBottom: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                <div style={{ fontSize: 13, color: "var(--gold)" }}>{ep.date}</div>
-                <button
-                  style={{
-                    background: "transparent",
-                    border: "1px solid var(--gold)",
-                    color: "var(--gold)",
-                    borderRadius: 8,
-                    padding: "3px 8px",
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
-                  onClick={() => downloadSetlistPdf(ep.date, ep.songs)}
-                >
-                  Download PDF
-                </button>
-              </div>
+              <div style={{ fontSize: 13, color: "var(--gold)", marginBottom: 4 }}>{ep.date}</div>
               <ol style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: "var(--ink-dim)" }}>
                 {ep.songs.map((s, j) => (
                   <li key={j}>
