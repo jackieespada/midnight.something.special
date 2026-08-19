@@ -38,6 +38,14 @@ export default function DjPage() {
   const [localQueue, setLocalQueue] = useState<QueuedRequest[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editArtist, setEditArtist] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editMessage, setEditMessage] = useState("");
+  const [editVideoUrl, setEditVideoUrl] = useState("");
+  const [editError, setEditError] = useState("");
+
   const apiPrefix = show === "hooks-harmony" ? "/api/hooks-harmony" : "/api";
 
   useEffect(() => {
@@ -97,6 +105,48 @@ export default function DjPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ index }),
     });
+    load();
+  }
+
+  function startEdit(index: number, r: QueuedRequest) {
+    setEditingIndex(index);
+    setEditTitle(r.title);
+    setEditArtist(r.artist);
+    setEditName(r.name || "");
+    setEditMessage(r.message || "");
+    setEditVideoUrl(r.videoUrl || "");
+    setEditError("");
+  }
+
+  function cancelEdit() {
+    setEditingIndex(null);
+    setEditError("");
+  }
+
+  async function saveEdit(index: number) {
+    setEditError("");
+    if (!editTitle.trim() || !editArtist.trim()) {
+      setEditError("Song and artist are required.");
+      return;
+    }
+    const res = await fetch(`${apiPrefix}/queue-edit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        index,
+        title: editTitle,
+        artist: editArtist,
+        name: editName,
+        message: editMessage,
+        videoUrl: editVideoUrl,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setEditError(data.error || "Something went wrong saving that.");
+      return;
+    }
+    setEditingIndex(null);
     load();
   }
 
@@ -322,7 +372,7 @@ export default function DjPage() {
             {localQueue.map((r, i) => (
               <li
                 key={`${r.ts}-${r.title}`}
-                draggable
+                draggable={editingIndex !== i}
                 onDragStart={() => handleDragStart(i)}
                 onDragOver={(e) => handleDragOver(e, i)}
                 onDragEnd={handleDragEnd}
@@ -331,50 +381,91 @@ export default function DjPage() {
                   borderBottom: "1px solid var(--wire)",
                   fontSize: 14,
                   opacity: dragIndex === i ? 0.4 : 1,
-                  cursor: "grab",
+                  cursor: editingIndex === i ? "default" : "grab",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ color: "var(--ink-dim)" }}>☰</span>
-                    {i === 0 ? "▶ " : ""}
-                    {r.tipped && (
-                      <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)}</span>
-                    )}
-                    {r.title} — {r.artist}
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
-                    <button
-                      style={{
-                        background: "transparent",
-                        border: "1px solid var(--gold)",
-                        color: "var(--gold)",
-                        borderRadius: 8,
-                        padding: "3px 8px",
-                        fontSize: 11,
-                        cursor: "pointer",
-                      }}
-                      onClick={() => boostToFront(i)}
-                    >
-                      ⬆ Boost
-                    </button>
-                  </span>
-                </div>
-                {r.message && (
-                  <div style={{ color: "var(--gold)", fontSize: 12, marginTop: 2, fontStyle: "italic" }}>
-                    💬 {r.message}
+                {editingIndex === i ? (
+                  <div style={{ padding: "8px 0" }}>
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Song title" />
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editArtist} onChange={(e) => setEditArtist(e.target.value)} placeholder="Artist" />
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Name (optional)" />
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editMessage} onChange={(e) => setEditMessage(e.target.value)} placeholder="Message (optional)" />
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editVideoUrl} onChange={(e) => setEditVideoUrl(e.target.value)} placeholder="Video link (optional)" />
+                    {editError && <div style={{ color: "var(--signal)", fontSize: 12, marginBottom: 6 }}>{editError}</div>}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        style={{ flex: 1, background: "var(--gold)", border: "none", color: "#1a0f08", borderRadius: 8, padding: "8px 0", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                        onClick={() => saveEdit(i)}
+                      >
+                        Save
+                      </button>
+                      <button
+                        style={{ flex: 1, background: "transparent", border: "1px solid var(--wire)", color: "var(--ink)", borderRadius: 8, padding: "8px 0", fontSize: 12, cursor: "pointer" }}
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                )}
-                {r.videoUrl && (
-                  <a
-                    href={r.videoUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ display: "inline-block", marginTop: 2, color: "var(--gold)", fontSize: 12, textDecoration: "underline" }}
-                  >
-                    🔗 video link
-                  </a>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ color: "var(--ink-dim)" }}>☰</span>
+                        {i === 0 ? "▶ " : ""}
+                        {r.tipped && (
+                          <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)}</span>
+                        )}
+                        {r.title} — {r.artist}
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
+                        <button
+                          style={{
+                            background: "transparent",
+                            border: "1px solid var(--wire)",
+                            color: "var(--ink-dim)",
+                            borderRadius: 8,
+                            padding: "3px 8px",
+                            fontSize: 11,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => startEdit(i, r)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          style={{
+                            background: "transparent",
+                            border: "1px solid var(--gold)",
+                            color: "var(--gold)",
+                            borderRadius: 8,
+                            padding: "3px 8px",
+                            fontSize: 11,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => boostToFront(i)}
+                        >
+                          ⬆ Boost
+                        </button>
+                      </span>
+                    </div>
+                    {r.message && (
+                      <div style={{ color: "var(--gold)", fontSize: 12, marginTop: 2, fontStyle: "italic" }}>
+                        💬 {r.message}
+                      </div>
+                    )}
+                    {r.videoUrl && (
+                      <a
+                        href={r.videoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ display: "inline-block", marginTop: 2, color: "var(--gold)", fontSize: 12, textDecoration: "underline" }}
+                      >
+                        🔗 video link
+                      </a>
+                    )}
+                  </>
                 )}
               </li>
             ))}
