@@ -100,6 +100,7 @@ export function advanceHandler(showId: ShowId) {
         title: state.nowPlaying.title,
         artist: state.nowPlaying.artist,
         name: state.nowPlaying.name,
+        message: state.nowPlaying.message,
         ts: Date.now(),
       });
     }
