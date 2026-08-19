@@ -132,6 +132,53 @@ export default function DjPage() {
     return songs.map((s, i) => `${i + 1}. ${s.title} — ${s.artist}${s.name ? ` (req. ${s.name})` : ""}`).join("\n");
   }
 
+  async function downloadSetlistPdf(
+    dateLabel: string,
+    songs: { title: string; artist: string; name?: string; message?: string }[]
+  ) {
+    if (!songs.length) return;
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF();
+    const showLabel = SHOW_LABELS[show];
+
+    doc.setFontSize(16);
+    doc.text(`${showLabel} — Setlist`, 14, 18);
+    doc.setFontSize(11);
+    doc.setTextColor(120);
+    doc.text(dateLabel, 14, 26);
+    doc.setTextColor(0);
+
+    let y = 38;
+    songs.forEach((s, i) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFontSize(12);
+      doc.text(`${i + 1}. ${s.title} — ${s.artist}`, 14, y);
+      y += 6;
+      if (s.name) {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Requested by: ${s.name}`, 20, y);
+        doc.setTextColor(0);
+        y += 5;
+      }
+      if (s.message) {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        const lines = doc.splitTextToSize(`Message: "${s.message}"`, 170);
+        doc.text(lines, 20, y);
+        doc.setTextColor(0);
+        y += 5 * lines.length;
+      }
+      y += 4;
+    });
+
+    const fileDate = dateLabel.replace(/[^0-9-]/g, "") || new Date().toISOString().slice(0, 10);
+    doc.save(`${showLabel.replace(/\s+/g, "-").toLowerCase()}-setlist-${fileDate}.pdf`);
+  }
+
   async function copySetlist() {
     if (!state?.history?.length) return;
     const text = formatSetlist(state.history);
@@ -337,6 +384,13 @@ export default function DjPage() {
         <button style={ghostBtnStyle} onClick={copySetlist} disabled={!state?.history?.length}>
           {copyLabel}
         </button>
+        <button
+          style={{ ...ghostBtnStyle, marginTop: 8 }}
+          onClick={() => downloadSetlistPdf(new Date().toISOString().slice(0, 10) + " (in progress)", state?.history || [])}
+          disabled={!state?.history?.length}
+        >
+          ⬇ Download PDF
+        </button>
         <button style={{ ...btnStyle, marginTop: 8 }} onClick={startNewEpisode}>
           Start new episode (archive this setlist)
         </button>
@@ -347,7 +401,23 @@ export default function DjPage() {
           <div style={labelStyle}>Past episodes</div>
           {state.episodes.map((ep, i) => (
             <div key={i} style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 13, color: "var(--gold)", marginBottom: 4 }}>{ep.date}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <span style={{ fontSize: 13, color: "var(--gold)" }}>{ep.date}</span>
+                <button
+                  style={{
+                    background: "transparent",
+                    border: "1px solid var(--gold)",
+                    color: "var(--gold)",
+                    borderRadius: 8,
+                    padding: "3px 8px",
+                    fontSize: 11,
+                    cursor: "pointer",
+                  }}
+                  onClick={() => downloadSetlistPdf(ep.date, ep.songs)}
+                >
+                  ⬇ PDF
+                </button>
+              </div>
               <ol style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: "var(--ink-dim)" }}>
                 {ep.songs.map((s, j) => (
                   <li key={j}>
