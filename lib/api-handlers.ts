@@ -16,6 +16,7 @@ export function requestHandler(showId: ShowId) {
     const artist = (body.artist || "").toString().trim();
     const name = (body.name || "").toString().trim();
     const message = (body.message || "").toString().trim().slice(0, 200);
+    const videoUrl = (body.videoUrl || "").toString().trim().slice(0, 500);
     const visitorId = (body.visitorId || "").toString().trim();
 
     if (!title || !artist) {
@@ -47,6 +48,7 @@ export function requestHandler(showId: ShowId) {
       artist,
       name: name || undefined,
       message: message || undefined,
+      videoUrl: videoUrl || undefined,
       ts: Date.now(),
     });
     await setState(showId, state);
@@ -62,6 +64,7 @@ export function manualAddHandler(showId: ShowId) {
     const artist = (body.artist || "").toString().trim();
     const name = (body.name || "").toString().trim();
     const message = (body.message || "").toString().trim().slice(0, 200);
+    const videoUrl = (body.videoUrl || "").toString().trim().slice(0, 500);
 
     if (!title || !artist) {
       return NextResponse.json({ error: "title and artist are required" }, { status: 400 });
@@ -78,6 +81,7 @@ export function manualAddHandler(showId: ShowId) {
       artist,
       name: name || undefined,
       message: message || undefined,
+      videoUrl: videoUrl || undefined,
       ts: Date.now(),
     });
     await setState(showId, state);
@@ -101,6 +105,7 @@ export function advanceHandler(showId: ShowId) {
         artist: state.nowPlaying.artist,
         name: state.nowPlaying.name,
         message: state.nowPlaying.message,
+        videoUrl: state.nowPlaying.videoUrl,
         ts: Date.now(),
       });
     }
@@ -111,6 +116,7 @@ export function advanceHandler(showId: ShowId) {
       artist: next.artist,
       name: next.name,
       message: next.message,
+      videoUrl: next.videoUrl,
     };
     await setState(showId, state);
 
@@ -217,6 +223,7 @@ export function tipCheckoutHandler(showId: ShowId) {
     const artist = (body.artist || "").toString().trim();
     const name = (body.name || "").toString().trim();
     const message = (body.message || "").toString().trim().slice(0, 200);
+    const videoUrl = (body.videoUrl || "").toString().trim().slice(0, 500);
     const amount = Number(body.amount);
 
     if (!title || !artist) {
@@ -242,7 +249,7 @@ export function tipCheckoutHandler(showId: ShowId) {
           quantity: 1,
         },
       ],
-      metadata: { show: showId, title, artist, name, message, tipCents: String(amountCents) },
+      metadata: { show: showId, title, artist, name, message, videoUrl, tipCents: String(amountCents) },
       success_url: `${origin}${requestPath}?tipped=1`,
       cancel_url: `${origin}${requestPath}?cancelled=1`,
     });
