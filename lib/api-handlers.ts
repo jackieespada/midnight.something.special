@@ -163,6 +163,41 @@ export function queueBoostHandler(showId: ShowId) {
   };
 }
 
+export function queueEditHandler(showId: ShowId) {
+  return async function POST(req: Request) {
+    const body = await req.json();
+    const index = Number(body.index);
+    const title = (body.title || "").toString().trim();
+    const artist = (body.artist || "").toString().trim();
+    const name = (body.name || "").toString().trim();
+    const message = (body.message || "").toString().trim().slice(0, 200);
+    const videoUrl = (body.videoUrl || "").toString().trim().slice(0, 500);
+
+    const state = await getState(showId);
+
+    if (Number.isNaN(index) || index < 0 || index >= state.queue.length) {
+      return NextResponse.json({ error: "Invalid queue position." }, { status: 400 });
+    }
+    if (!title || !artist) {
+      return NextResponse.json({ error: "title and artist are required" }, { status: 400 });
+    }
+
+    const existing = state.queue[index];
+    state.queue[index] = {
+      ...existing,
+      title,
+      artist,
+      name: name || undefined,
+      message: message || undefined,
+      videoUrl: videoUrl || undefined,
+    };
+
+    await setState(showId, state);
+
+    return NextResponse.json({ ok: true, state });
+  };
+}
+
 export function queueReorderHandler(showId: ShowId) {
   return async function POST(req: Request) {
     const body = await req.json();
