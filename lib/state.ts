@@ -3,7 +3,7 @@ export type ShowId = "midnight-something-special" | "hooks-harmony";
 export type Song = { title: string; artist: string };
 export type NowPlaying = Song & { name?: string; message?: string };
 export type Request = Song & { name?: string; message?: string; ts: number; tipped?: boolean; tipCents?: number };
-export type PlayedSong = Song & { name?: string; ts: number };
+export type PlayedSong = Song & { name?: string; message?: string; ts: number };
 export type Episode = { date: string; songs: PlayedSong[] };
 
 export type ShowState = {
