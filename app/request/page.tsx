@@ -15,9 +15,6 @@ const SHOW_SCHEDULE: Record<ShowId, string> = {
   "hooks-harmony": "Saturdays 3PM ET",
 };
 
-// Overrides the shared CSS custom properties per show, since every color in
-// this page is already written as var(--gold) / var(--signal) / var(--haze) —
-// this just swaps what those variables point to based on which show is active.
 const SHOW_THEME: Record<ShowId, React.CSSProperties> = {
   "midnight-something-special": {},
   "hooks-harmony": {
@@ -43,6 +40,7 @@ export default function RequestPage() {
   const [artist, setArtist] = useState("");
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [tipAmount, setTipAmount] = useState("");
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
   const [theme, setEpisodeTheme] = useState("");
@@ -88,7 +86,7 @@ export default function RequestPage() {
     const res = await fetch(`${apiPrefix}/request`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: song, artist, name, message, visitorId: getVisitorId() }),
+      body: JSON.stringify({ title: song, artist, name, message, videoUrl, visitorId: getVisitorId() }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -99,6 +97,7 @@ export default function RequestPage() {
     setArtist("");
     setName("");
     setMessage("");
+    setVideoUrl("");
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2500);
     loadState();
@@ -120,7 +119,7 @@ export default function RequestPage() {
       const res = await fetch(`${apiPrefix}/tip-checkout`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: song, artist, name, message, amount }),
+        body: JSON.stringify({ title: song, artist, name, message, videoUrl, amount }),
       });
       const data = await res.json();
       if (data.url) {
@@ -235,6 +234,13 @@ export default function RequestPage() {
           value={message}
           onChange={(e) => setMessage(e.target.value.slice(0, 200))}
           placeholder="Shoutout, dedication, whatever you want me to say on stream"
+        />
+        <label style={labelStyle}>Link to the video (optional, helps me find it fast)</label>
+        <input
+          style={inputStyle}
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+          placeholder="Paste a YouTube link"
         />
         <button style={btnStyle} onClick={submit}>
           Submit request
