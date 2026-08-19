@@ -291,7 +291,7 @@ export default function DjPage() {
           </div>
         )}
         {state?.nowPlaying?.videoUrl && (
-          
+          <a
             href={state.nowPlaying.videoUrl}
             target="_blank"
             rel="noreferrer"
@@ -367,7 +367,7 @@ export default function DjPage() {
                   </div>
                 )}
                 {r.videoUrl && (
-                  
+                  <a
                     href={r.videoUrl}
                     target="_blank"
                     rel="noreferrer"
