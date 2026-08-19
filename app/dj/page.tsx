@@ -30,6 +30,7 @@ export default function DjPage() {
   const [manualArtist, setManualArtist] = useState("");
   const [manualName, setManualName] = useState("");
   const [manualMessage, setManualMessage] = useState("");
+  const [manualVideoUrl, setManualVideoUrl] = useState("");
   const [manualError, setManualError] = useState("");
 
   const [copyLabel, setCopyLabel] = useState("Copy setlist");
@@ -108,7 +109,7 @@ export default function DjPage() {
     const res = await fetch(`${apiPrefix}/manual-add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage }),
+      body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage, videoUrl: manualVideoUrl }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -119,6 +120,7 @@ export default function DjPage() {
     setManualArtist("");
     setManualName("");
     setManualMessage("");
+    setManualVideoUrl("");
     load();
   }
 
@@ -134,7 +136,7 @@ export default function DjPage() {
 
   async function downloadSetlistPdf(
     dateLabel: string,
-    songs: { title: string; artist: string; name?: string; message?: string }[]
+    songs: { title: string; artist: string; name?: string; message?: string; videoUrl?: string }[]
   ) {
     if (!songs.length) return;
     const { jsPDF } = await import("jspdf");
@@ -168,6 +170,14 @@ export default function DjPage() {
         doc.setFontSize(10);
         doc.setTextColor(100);
         const lines = doc.splitTextToSize(`Message: "${s.message}"`, 170);
+        doc.text(lines, 20, y);
+        doc.setTextColor(0);
+        y += 5 * lines.length;
+      }
+      if (s.videoUrl) {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        const lines = doc.splitTextToSize(`Video: ${s.videoUrl}`, 170);
         doc.text(lines, 20, y);
         doc.setTextColor(0);
         y += 5 * lines.length;
@@ -280,6 +290,16 @@ export default function DjPage() {
             📖 Read on air: "{state.nowPlaying.message}"
           </div>
         )}
+        {state?.nowPlaying?.videoUrl && (
+          
+            href={state.nowPlaying.videoUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: "inline-block", marginTop: 10, color: "var(--gold)", fontSize: 13, textDecoration: "underline" }}
+          >
+            🔗 Open video link
+          </a>
+        )}
 
         <div style={{ height: 1, background: "var(--wire)", margin: "16px 0" }} />
 
@@ -346,6 +366,16 @@ export default function DjPage() {
                     💬 {r.message}
                   </div>
                 )}
+                {r.videoUrl && (
+                  
+                    href={r.videoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: "inline-block", marginTop: 2, color: "var(--gold)", fontSize: 12, textDecoration: "underline" }}
+                  >
+                    🔗 video link
+                  </a>
+                )}
               </li>
             ))}
           </ul>
@@ -361,6 +391,7 @@ export default function DjPage() {
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualArtist} onChange={(e) => setManualArtist(e.target.value)} placeholder="Artist" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Name (optional)" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualMessage} onChange={(e) => setManualMessage(e.target.value)} placeholder="Message to read (optional)" />
+        <input style={{ ...inputStyle, marginTop: 8 }} value={manualVideoUrl} onChange={(e) => setManualVideoUrl(e.target.value)} placeholder="Video link (optional)" />
         <button style={ghostBtnStyle} onClick={addManual}>
           Add to queue
         </button>
