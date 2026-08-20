@@ -63,6 +63,8 @@ export default function DjPage() {
     const data = await res.json();
     setState(data);
     setLocalQueue(data.queue || []);
+    // Only sync the theme box from the server once per show — otherwise the
+    // periodic poll below overwrites whatever you're mid-typing.
     if (themeInitializedForShow.current !== show) {
       setThemeInput(data.theme || "");
       themeInitializedForShow.current = show;
@@ -435,7 +437,7 @@ export default function DjPage() {
           </div>
         )}
         {state?.nowPlaying?.videoUrl && (
-          
+          <a
             href={state.nowPlaying.videoUrl}
             target="_blank"
             rel="noreferrer"
@@ -550,7 +552,7 @@ export default function DjPage() {
                       </div>
                     )}
                     {r.videoUrl && (
-                      
+                      <a
                         href={r.videoUrl}
                         target="_blank"
                         rel="noreferrer"
