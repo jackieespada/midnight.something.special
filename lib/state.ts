@@ -9,7 +9,14 @@ export type Episode = { date: string; songs: PlayedSong[] };
 export type Poll = {
   question: string;
   options: string[];
-  votes: Record<string, string>;
+  votes: Record<string, string>; // visitorId -> chosen option
+};
+
+export type PollResult = {
+  question: string;
+  options: string[];
+  counts: Record<string, number>; // option -> vote count
+  date: string;
 };
 
 export type ShowState = {
@@ -21,11 +28,15 @@ export type ShowState = {
   submitterCounts: Record<string, number>;
   theme?: string;
   poll?: Poll;
+  pollHistory?: PollResult[];
 };
 
 export const MAX_QUEUE = 20;
 export const MAX_PER_PERSON = 2;
 
+// Each show gets its own storage key so their queues/history never mix.
+// The Midnight Something Special key is unchanged from before this file
+// supported multiple shows, so its existing live data is preserved.
 const STATE_KEYS: Record<ShowId, string> = {
   "midnight-something-special": "midnight-something-special:state",
   "hooks-harmony": "hooks-harmony:state",
@@ -52,6 +63,9 @@ function defaultStateFor(showId: ShowId): ShowState {
   };
 }
 
+// Inserts a tipped request ahead of all non-tipped requests, but behind any
+// requests that were tipped earlier (first tipped, first served). Tipped
+// requests are always allowed in, even if the queue is otherwise "full."
 export function insertTippedRequest(queue: Request[], req: Request): Request[] {
   const firstNonTippedIndex = queue.findIndex((r) => !r.tipped);
   if (firstNonTippedIndex === -1) {
@@ -60,6 +74,10 @@ export function insertTippedRequest(queue: Request[], req: Request): Request[] {
   return [...queue.slice(0, firstNonTippedIndex), req, ...queue.slice(firstNonTippedIndex)];
 }
 
+// Uses Netlify Blobs (Netlify's built-in key/value store — no separate
+// service to set up, it just works once this is deployed on Netlify).
+// Falls back to an in-memory object for local development, which resets
+// on every reload — that's expected locally.
 const memoryStates: Partial<Record<ShowId, ShowState>> = {};
 
 async function getStoreSafe() {
@@ -83,6 +101,7 @@ export async function getState(showId: ShowId): Promise<ShowState> {
         if (!parsed.episodes) parsed.episodes = [];
         if (!parsed.submitterCounts) parsed.submitterCounts = {};
         if (parsed.theme === undefined) parsed.theme = "";
+        if (!parsed.pollHistory) parsed.pollHistory = [];
         return parsed;
       }
     } catch {
