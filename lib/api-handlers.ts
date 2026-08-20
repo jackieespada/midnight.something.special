@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { ShowId, getState, setState, MAX_QUEUE, MAX_PER_PERSON } from "./state";
+import { ShowId, getState, setState, MAX_QUEUE, MAX_PER_PERSON, PollResult } from "./state";
 
 export function makeId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -272,6 +272,20 @@ export function themeHandler(showId: ShowId) {
 
 // DJ sets/updates the poll question and options. Saving a new poll always
 // resets the vote tally to zero, since it's meant to represent a fresh poll.
+function tallyPoll(poll: { question: string; options: string[]; votes: Record<string, string> }): PollResult {
+  const counts: Record<string, number> = {};
+  for (const opt of poll.options) counts[opt] = 0;
+  Object.values(poll.votes).forEach((opt) => {
+    if (counts[opt] !== undefined) counts[opt] += 1;
+  });
+  return {
+    question: poll.question,
+    options: poll.options,
+    counts,
+    date: new Date().toISOString().slice(0, 10),
+  };
+}
+
 export function pollSetHandler(showId: ShowId) {
   return async function POST(req: Request) {
     const body = await req.json();
@@ -287,6 +301,11 @@ export function pollSetHandler(showId: ShowId) {
     }
 
     const state = await getState(showId);
+    if (!state.pollHistory) state.pollHistory = [];
+    // Archive the outgoing poll's results before replacing it with the new one
+    if (state.poll) {
+      state.pollHistory.unshift(tallyPoll(state.poll));
+    }
     state.poll = { question, options, votes: {} };
     await setState(showId, state);
 
@@ -322,6 +341,10 @@ export function pollVoteHandler(showId: ShowId) {
 export function pollClearHandler(showId: ShowId) {
   return async function POST() {
     const state = await getState(showId);
+    if (!state.pollHistory) state.pollHistory = [];
+    if (state.poll) {
+      state.pollHistory.unshift(tallyPoll(state.poll));
+    }
     state.poll = undefined;
     await setState(showId, state);
 
