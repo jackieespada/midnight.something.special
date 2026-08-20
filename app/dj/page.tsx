@@ -426,6 +426,41 @@ export default function DjPage() {
               })()}
             </div>
           )}
+
+          {state && state.pollHistory && state.pollHistory.length > 0 && (
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--wire)" }}>
+              <div style={{ fontSize: 11, color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>
+                Past polls
+              </div>
+              {state.pollHistory.map((p, i) => {
+                const total = (Object.values(p.counts) as number[]).reduce((a: number, b: number) => a + b, 0);
+                const sorted = [...p.options].sort((a, b) => (p.counts[b] || 0) - (p.counts[a] || 0));
+                return (
+                  <div key={i} style={{ marginBottom: 14 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                      <span style={{ color: "var(--gold)" }}>"{p.question}"</span>
+                      <span style={{ color: "var(--ink-dim)" }}>{p.date}</span>
+                    </div>
+                    {sorted.map((opt, j) => {
+                      const c = p.counts[opt] || 0;
+                      const pct = total ? Math.round((c / total) * 100) : 0;
+                      return (
+                        <div key={opt} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ink-dim)", padding: "2px 0" }}>
+                          <span>
+                            {j === 0 && total > 0 ? "🏆 " : ""}
+                            {opt}
+                          </span>
+                          <span>
+                            {c} vote{c === 1 ? "" : "s"} ({pct}%)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
