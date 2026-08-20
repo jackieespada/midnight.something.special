@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { ShowId, getState, setState, MAX_QUEUE, MAX_PER_PERSON } from "./state";
 
+export function makeId(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
 export function stateHandler(showId: ShowId) {
   return async function GET() {
     const state = await getState(showId);
@@ -44,6 +48,7 @@ export function requestHandler(showId: ShowId) {
     }
 
     state.queue.push({
+      id: makeId(),
       title,
       artist,
       name: name || undefined,
@@ -77,6 +82,7 @@ export function manualAddHandler(showId: ShowId) {
     }
 
     state.queue.push({
+      id: makeId(),
       title,
       artist,
       name: name || undefined,
@@ -144,12 +150,13 @@ export function nowPlayingHandler(showId: ShowId) {
 export function queueBoostHandler(showId: ShowId) {
   return async function POST(req: Request) {
     const body = await req.json();
-    const index = Number(body.index);
+    const id = (body.id || "").toString();
 
     const state = await getState(showId);
+    const index = state.queue.findIndex((r) => r.id === id);
 
-    if (Number.isNaN(index) || index < 0 || index >= state.queue.length) {
-      return NextResponse.json({ error: "Invalid queue position." }, { status: 400 });
+    if (index === -1) {
+      return NextResponse.json({ error: "That request isn't in the queue anymore." }, { status: 400 });
     }
 
     const [item] = state.queue.splice(index, 1);
@@ -166,7 +173,7 @@ export function queueBoostHandler(showId: ShowId) {
 export function queueEditHandler(showId: ShowId) {
   return async function POST(req: Request) {
     const body = await req.json();
-    const index = Number(body.index);
+    const id = (body.id || "").toString();
     const title = (body.title || "").toString().trim();
     const artist = (body.artist || "").toString().trim();
     const name = (body.name || "").toString().trim();
@@ -174,9 +181,10 @@ export function queueEditHandler(showId: ShowId) {
     const videoUrl = (body.videoUrl || "").toString().trim().slice(0, 500);
 
     const state = await getState(showId);
+    const index = state.queue.findIndex((r) => r.id === id);
 
-    if (Number.isNaN(index) || index < 0 || index >= state.queue.length) {
-      return NextResponse.json({ error: "Invalid queue position." }, { status: 400 });
+    if (index === -1) {
+      return NextResponse.json({ error: "That request isn't in the queue anymore." }, { status: 400 });
     }
     if (!title || !artist) {
       return NextResponse.json({ error: "title and artist are required" }, { status: 400 });
@@ -204,11 +212,28 @@ export function queueReorderHandler(showId: ShowId) {
     const order = body.order;
 
     if (!Array.isArray(order)) {
-      return NextResponse.json({ error: "order must be an array" }, { status: 400 });
+      return NextResponse.json({ error: "order must be an array of ids" }, { status: 400 });
     }
 
     const state = await getState(showId);
-    state.queue = order;
+    const byId = new Map(state.queue.map((r) => [r.id, r]));
+    const reordered: typeof state.queue = [];
+
+    // Place items in the order the DJ dragged them into
+    for (const id of order) {
+      const item = byId.get(id);
+      if (item) {
+        reordered.push(item);
+        byId.delete(id);
+      }
+    }
+    // Anything left over arrived after the drag started (e.g. a new viewer
+    // request) — keep it instead of silently dropping it, tacked on the end.
+    for (const item of byId.values()) {
+      reordered.push(item);
+    }
+
+    state.queue = reordered;
     await setState(showId, state);
 
     return NextResponse.json({ ok: true, state });
