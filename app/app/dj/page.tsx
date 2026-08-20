@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { ShowState, Request as QueuedRequest } from "../../lib/state";
 
 type ShowId = "midnight-something-special" | "hooks-harmony";
@@ -26,16 +26,30 @@ export default function DjPage() {
   const [artist, setArtist] = useState("");
   const [themeInput, setThemeInput] = useState("");
 
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", "", "", ""]);
+  const [pollError, setPollError] = useState("");
+
   const [manualTitle, setManualTitle] = useState("");
   const [manualArtist, setManualArtist] = useState("");
   const [manualName, setManualName] = useState("");
   const [manualMessage, setManualMessage] = useState("");
+  const [manualVideoUrl, setManualVideoUrl] = useState("");
   const [manualError, setManualError] = useState("");
 
   const [copyLabel, setCopyLabel] = useState("Copy setlist");
 
   const [localQueue, setLocalQueue] = useState<QueuedRequest[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const themeInitializedForShow = useRef<ShowId | null>(null);
+
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editArtist, setEditArtist] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editMessage, setEditMessage] = useState("");
+  const [editVideoUrl, setEditVideoUrl] = useState("");
+  const [editError, setEditError] = useState("");
 
   const apiPrefix = show === "hooks-harmony" ? "/api/hooks-harmony" : "/api";
 
@@ -49,7 +63,12 @@ export default function DjPage() {
     const data = await res.json();
     setState(data);
     setLocalQueue(data.queue || []);
-    setThemeInput(data.theme || "");
+    // Only sync the theme box from the server once per show — otherwise the
+    // periodic poll below overwrites whatever you're mid-typing.
+    if (themeInitializedForShow.current !== show) {
+      setThemeInput(data.theme || "");
+      themeInitializedForShow.current = show;
+    }
   }
 
   useEffect(() => {
@@ -85,17 +104,83 @@ export default function DjPage() {
     load();
   }
 
+  async function savePoll() {
+    setPollError("");
+    const cleanOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0);
+    if (!pollQuestion.trim() || cleanOptions.length < 2) {
+      setPollError("Add a question and at least 2 options.");
+      return;
+    }
+    const res = await fetch("/api/hooks-harmony/poll-set", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: pollQuestion, options: cleanOptions }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setPollError(data.error || "Something went wrong saving the poll.");
+      return;
+    }
+    load();
+  }
+
   async function advance() {
     await fetch(`${apiPrefix}/advance`, { method: "POST" });
     load();
   }
 
-  async function boostToFront(index: number) {
+  async function boostToFront(id: string) {
     await fetch(`${apiPrefix}/queue-boost`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ index }),
+      body: JSON.stringify({ id }),
     });
+    load();
+  }
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  function startEdit(index: number, r: QueuedRequest) {
+    setEditingIndex(index);
+    setEditingId(r.id);
+    setEditTitle(r.title);
+    setEditArtist(r.artist);
+    setEditName(r.name || "");
+    setEditMessage(r.message || "");
+    setEditVideoUrl(r.videoUrl || "");
+    setEditError("");
+  }
+
+  function cancelEdit() {
+    setEditingIndex(null);
+    setEditError("");
+  }
+
+  async function saveEdit() {
+    setEditError("");
+    if (!editTitle.trim() || !editArtist.trim()) {
+      setEditError("Song and artist are required.");
+      return;
+    }
+    const res = await fetch(`${apiPrefix}/queue-edit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: editingId,
+        title: editTitle,
+        artist: editArtist,
+        name: editName,
+        message: editMessage,
+        videoUrl: editVideoUrl,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setEditError(data.error || "Something went wrong saving that.");
+      return;
+    }
+    setEditingIndex(null);
+    setEditingId(null);
     load();
   }
 
@@ -108,7 +193,7 @@ export default function DjPage() {
     const res = await fetch(`${apiPrefix}/manual-add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage }),
+      body: JSON.stringify({ title: manualTitle, artist: manualArtist, name: manualName, message: manualMessage, videoUrl: manualVideoUrl }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -119,6 +204,7 @@ export default function DjPage() {
     setManualArtist("");
     setManualName("");
     setManualMessage("");
+    setManualVideoUrl("");
     load();
   }
 
@@ -134,7 +220,7 @@ export default function DjPage() {
 
   async function downloadSetlistPdf(
     dateLabel: string,
-    songs: { title: string; artist: string; name?: string; message?: string }[]
+    songs: { title: string; artist: string; name?: string; message?: string; videoUrl?: string }[]
   ) {
     if (!songs.length) return;
     const { jsPDF } = await import("jspdf");
@@ -168,6 +254,14 @@ export default function DjPage() {
         doc.setFontSize(10);
         doc.setTextColor(100);
         const lines = doc.splitTextToSize(`Message: "${s.message}"`, 170);
+        doc.text(lines, 20, y);
+        doc.setTextColor(0);
+        y += 5 * lines.length;
+      }
+      if (s.videoUrl) {
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        const lines = doc.splitTextToSize(`Video: ${s.videoUrl}`, 170);
         doc.text(lines, 20, y);
         doc.setTextColor(0);
         y += 5 * lines.length;
@@ -208,7 +302,7 @@ export default function DjPage() {
     await fetch(`${apiPrefix}/queue-reorder`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ order: localQueue }),
+      body: JSON.stringify({ order: localQueue.map((r) => r.id) }),
     });
     load();
   }
@@ -257,6 +351,67 @@ export default function DjPage() {
         </button>
       </div>
 
+      {show === "hooks-harmony" && (
+        <div style={cardStyle}>
+          <div style={labelStyle}>Next week's theme poll (Hooks + Harmony only)</div>
+          <input
+            style={inputStyle}
+            value={pollQuestion}
+            onChange={(e) => setPollQuestion(e.target.value)}
+            placeholder="e.g. What should next week's theme be?"
+          />
+          {pollOptions.map((opt, i) => (
+            <input
+              key={i}
+              style={{ ...inputStyle, marginTop: 8 }}
+              value={opt}
+              onChange={(e) => {
+                const next = [...pollOptions];
+                next[i] = e.target.value;
+                setPollOptions(next);
+              }}
+              placeholder={`Option ${i + 1}${i < 2 ? "" : " (optional)"}`}
+            />
+          ))}
+          {pollError && <div style={{ marginTop: 10, fontSize: 13, color: "var(--signal)" }}>{pollError}</div>}
+          <button style={ghostBtnStyle} onClick={savePoll}>
+            Save poll (resets votes)
+          </button>
+
+          {state?.poll && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 13, color: "var(--gold)", marginBottom: 8 }}>
+                Currently live: "{state.poll.question}"
+              </div>
+              {(() => {
+                const counts: Record<string, number> = {};
+                (Object.values(state.poll!.votes) as string[]).forEach((opt: string) => {
+                  counts[opt] = (counts[opt] || 0) + 1;
+                });
+                const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0);
+                return state.poll.options.map((opt) => {
+                  const c = counts[opt] || 0;
+                  const pct = totalVotes ? Math.round((c / totalVotes) * 100) : 0;
+                  return (
+                    <div key={opt} style={{ marginBottom: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                        <span>{opt}</span>
+                        <span style={{ color: "var(--ink-dim)" }}>
+                          {c} vote{c === 1 ? "" : "s"} ({pct}%)
+                        </span>
+                      </div>
+                      <div style={{ height: 6, background: "var(--wire)", borderRadius: 4, marginTop: 3 }}>
+                        <div style={{ height: 6, width: `${pct}%`, background: "var(--gold)", borderRadius: 4 }} />
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={cardStyle}>
         <div style={labelStyle}>Now playing</div>
         <div style={{ fontSize: 16, fontWeight: 700 }}>
@@ -280,6 +435,16 @@ export default function DjPage() {
             📖 Read on air: "{state.nowPlaying.message}"
           </div>
         )}
+        {state?.nowPlaying?.videoUrl && (
+          <a
+            href={state.nowPlaying.videoUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: "inline-block", marginTop: 10, color: "var(--gold)", fontSize: 13, textDecoration: "underline" }}
+          >
+            🔗 Open video link
+          </a>
+        )}
 
         <div style={{ height: 1, background: "var(--wire)", margin: "16px 0" }} />
 
@@ -302,7 +467,7 @@ export default function DjPage() {
             {localQueue.map((r, i) => (
               <li
                 key={`${r.ts}-${r.title}`}
-                draggable
+                draggable={editingIndex !== i}
                 onDragStart={() => handleDragStart(i)}
                 onDragOver={(e) => handleDragOver(e, i)}
                 onDragEnd={handleDragEnd}
@@ -311,40 +476,91 @@ export default function DjPage() {
                   borderBottom: "1px solid var(--wire)",
                   fontSize: 14,
                   opacity: dragIndex === i ? 0.4 : 1,
-                  cursor: "grab",
+                  cursor: editingIndex === i ? "default" : "grab",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ color: "var(--ink-dim)" }}>☰</span>
-                    {i === 0 ? "▶ " : ""}
-                    {r.tipped && (
-                      <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)}</span>
-                    )}
-                    {r.title} — {r.artist}
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
-                    <button
-                      style={{
-                        background: "transparent",
-                        border: "1px solid var(--gold)",
-                        color: "var(--gold)",
-                        borderRadius: 8,
-                        padding: "3px 8px",
-                        fontSize: 11,
-                        cursor: "pointer",
-                      }}
-                      onClick={() => boostToFront(i)}
-                    >
-                      ⬆ Boost
-                    </button>
-                  </span>
-                </div>
-                {r.message && (
-                  <div style={{ color: "var(--gold)", fontSize: 12, marginTop: 2, fontStyle: "italic" }}>
-                    💬 {r.message}
+                {editingIndex === i ? (
+                  <div style={{ padding: "8px 0" }}>
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Song title" />
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editArtist} onChange={(e) => setEditArtist(e.target.value)} placeholder="Artist" />
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Name (optional)" />
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editMessage} onChange={(e) => setEditMessage(e.target.value)} placeholder="Message (optional)" />
+                    <input style={{ ...inputStyle, marginBottom: 6 }} value={editVideoUrl} onChange={(e) => setEditVideoUrl(e.target.value)} placeholder="Video link (optional)" />
+                    {editError && <div style={{ color: "var(--signal)", fontSize: 12, marginBottom: 6 }}>{editError}</div>}
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        style={{ flex: 1, background: "var(--gold)", border: "none", color: "#1a0f08", borderRadius: 8, padding: "8px 0", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+                        onClick={() => saveEdit()}
+                      >
+                        Save
+                      </button>
+                      <button
+                        style={{ flex: 1, background: "transparent", border: "1px solid var(--wire)", color: "var(--ink)", borderRadius: 8, padding: "8px 0", fontSize: 12, cursor: "pointer" }}
+                        onClick={cancelEdit}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ color: "var(--ink-dim)" }}>☰</span>
+                        {i === 0 ? "▶ " : ""}
+                        {r.tipped && (
+                          <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)}</span>
+                        )}
+                        {r.title} — {r.artist}
+                      </span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
+                        <button
+                          style={{
+                            background: "transparent",
+                            border: "1px solid var(--wire)",
+                            color: "var(--ink-dim)",
+                            borderRadius: 8,
+                            padding: "3px 8px",
+                            fontSize: 11,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => startEdit(i, r)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          style={{
+                            background: "transparent",
+                            border: "1px solid var(--gold)",
+                            color: "var(--gold)",
+                            borderRadius: 8,
+                            padding: "3px 8px",
+                            fontSize: 11,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => boostToFront(r.id)}
+                        >
+                          ⬆ Boost
+                        </button>
+                      </span>
+                    </div>
+                    {r.message && (
+                      <div style={{ color: "var(--gold)", fontSize: 12, marginTop: 2, fontStyle: "italic" }}>
+                        💬 {r.message}
+                      </div>
+                    )}
+                    {r.videoUrl && (
+                      <a
+                        href={r.videoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ display: "inline-block", marginTop: 2, color: "var(--gold)", fontSize: 12, textDecoration: "underline" }}
+                      >
+                        🔗 video link
+                      </a>
+                    )}
+                  </>
                 )}
               </li>
             ))}
@@ -361,6 +577,7 @@ export default function DjPage() {
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualArtist} onChange={(e) => setManualArtist(e.target.value)} placeholder="Artist" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Name (optional)" />
         <input style={{ ...inputStyle, marginTop: 8 }} value={manualMessage} onChange={(e) => setManualMessage(e.target.value)} placeholder="Message to read (optional)" />
+        <input style={{ ...inputStyle, marginTop: 8 }} value={manualVideoUrl} onChange={(e) => setManualVideoUrl(e.target.value)} placeholder="Video link (optional)" />
         <button style={ghostBtnStyle} onClick={addManual}>
           Add to queue
         </button>
