@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getState, setState, insertTippedRequest, ShowId } from "../../../lib/state";
+import { makeId } from "../../../lib/api-handlers";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ export async function POST(req: Request) {
     if (title && artist) {
       const state = await getState(showId);
       state.queue = insertTippedRequest(state.queue, {
+        id: makeId(),
         title,
         artist,
         name: name || undefined,
