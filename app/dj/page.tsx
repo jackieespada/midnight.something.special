@@ -10,12 +10,12 @@ const SHOW_LABELS: Record<ShowId, string> = {
   "hooks-harmony": "Hooks + Harmony",
 };
 
-const SHOW_THEME: Record<ShowId, React.CSSProperties> = {
+const SHOW_THEME: any = {
   "midnight-something-special": {},
   "hooks-harmony": {
-    ["--gold" as any]: "#00c3da",
-    ["--signal" as any]: "#c401b0",
-    ["--haze" as any]: "#692dad",
+    "--gold": "#00c3da",
+    "--signal": "#c401b0",
+    "--haze": "#692dad",
   },
 };
 
