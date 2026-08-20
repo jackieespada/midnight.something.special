@@ -306,9 +306,10 @@ export default function DjPage() {
   }
 
   const queueCount = state?.queue?.length || 0;
+  const rootStyle = { maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh", ...SHOW_THEME[show] };
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh", ...SHOW_THEME[show] }}>
+    <div style={rootStyle}>
       <div style={{ display: "flex", gap: 6, marginBottom: 20, background: "rgba(0,0,0,.25)", borderRadius: 14, padding: 5 }}>
         {(Object.keys(SHOW_LABELS) as ShowId[]).map((s) => (
           <button
