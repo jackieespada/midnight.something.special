@@ -219,7 +219,6 @@ export function queueReorderHandler(showId: ShowId) {
     const byId = new Map(state.queue.map((r) => [r.id, r]));
     const reordered: typeof state.queue = [];
 
-    // Place items in the order the DJ dragged them into
     for (const id of order) {
       const item = byId.get(id);
       if (item) {
@@ -227,8 +226,6 @@ export function queueReorderHandler(showId: ShowId) {
         byId.delete(id);
       }
     }
-    // Anything left over arrived after the drag started (e.g. a new viewer
-    // request) — keep it instead of silently dropping it, tacked on the end.
     for (const item of byId.values()) {
       reordered.push(item);
     }
@@ -264,6 +261,50 @@ export function themeHandler(showId: ShowId) {
 
     const state = await getState(showId);
     state.theme = theme;
+    await setState(showId, state);
+
+    return NextResponse.json({ ok: true, state });
+  };
+}
+
+export function pollSetHandler(showId: ShowId) {
+  return async function POST(req: Request) {
+    const body = await req.json();
+    const question = (body.question || "").toString().trim().slice(0, 200);
+    const options = Array.isArray(body.options)
+      ? body.options
+          .map((o: unknown) => (o || "").toString().trim().slice(0, 80))
+          .filter((o: string) => o.length > 0)
+      : [];
+
+    if (!question || options.length < 2) {
+      return NextResponse.json({ error: "Add a question and at least 2 options." }, { status: 400 });
+    }
+
+    const state = await getState(showId);
+    state.poll = { question, options, votes: {} };
+    await setState(showId, state);
+
+    return NextResponse.json({ ok: true, state });
+  };
+}
+
+export function pollVoteHandler(showId: ShowId) {
+  return async function POST(req: Request) {
+    const body = await req.json();
+    const option = (body.option || "").toString().trim();
+    const visitorId = (body.visitorId || "").toString().trim();
+
+    if (!option || !visitorId) {
+      return NextResponse.json({ error: "Missing option or visitor id." }, { status: 400 });
+    }
+
+    const state = await getState(showId);
+    if (!state.poll || !state.poll.options.includes(option)) {
+      return NextResponse.json({ error: "That poll or option no longer exists." }, { status: 400 });
+    }
+
+    state.poll.votes[visitorId] = option;
     await setState(showId, state);
 
     return NextResponse.json({ ok: true, state });
