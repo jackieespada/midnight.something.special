@@ -18,12 +18,12 @@ const SHOW_SCHEDULE: Record<ShowId, string> = {
 // Overrides the shared CSS custom properties per show, since every color in
 // this page is already written as var(--gold) / var(--signal) / var(--haze) —
 // this just swaps what those variables point to based on which show is active.
-const SHOW_THEME: Record<ShowId, React.CSSProperties> = {
+const SHOW_THEME: any = {
   "midnight-something-special": {},
   "hooks-harmony": {
-    ["--gold" as any]: "#00c3da",
-    ["--signal" as any]: "#c401b0",
-    ["--haze" as any]: "#692dad",
+    "--gold": "#00c3da",
+    "--signal": "#c401b0",
+    "--haze": "#692dad",
   },
 };
 
@@ -151,8 +151,10 @@ export default function RequestPage() {
     }
   }
 
+  const rootStyle = { maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh", ...SHOW_THEME[show] };
+
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh", ...SHOW_THEME[show] }}>
+    <div style={rootStyle}>
       <div style={{ display: "flex", gap: 6, marginBottom: 20, background: "rgba(0,0,0,.25)", borderRadius: 14, padding: 5 }}>
         {(Object.keys(SHOW_LABELS) as ShowId[]).map((s) => (
           <button
