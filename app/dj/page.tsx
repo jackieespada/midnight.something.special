@@ -26,6 +26,10 @@ export default function DjPage() {
   const [artist, setArtist] = useState("");
   const [themeInput, setThemeInput] = useState("");
 
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState(["", "", "", ""]);
+  const [pollError, setPollError] = useState("");
+
   const [manualTitle, setManualTitle] = useState("");
   const [manualArtist, setManualArtist] = useState("");
   const [manualName, setManualName] = useState("");
@@ -59,8 +63,6 @@ export default function DjPage() {
     const data = await res.json();
     setState(data);
     setLocalQueue(data.queue || []);
-    // Only sync the theme box from the server once per show — otherwise the
-    // periodic poll below overwrites whatever you're mid-typing.
     if (themeInitializedForShow.current !== show) {
       setThemeInput(data.theme || "");
       themeInitializedForShow.current = show;
@@ -97,6 +99,26 @@ export default function DjPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ theme: themeInput }),
     });
+    load();
+  }
+
+  async function savePoll() {
+    setPollError("");
+    const cleanOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0);
+    if (!pollQuestion.trim() || cleanOptions.length < 2) {
+      setPollError("Add a question and at least 2 options.");
+      return;
+    }
+    const res = await fetch("/api/hooks-harmony/poll-set", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: pollQuestion, options: cleanOptions }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setPollError(data.error || "Something went wrong saving the poll.");
+      return;
+    }
     load();
   }
 
@@ -327,6 +349,67 @@ export default function DjPage() {
         </button>
       </div>
 
+      {show === "hooks-harmony" && (
+        <div style={cardStyle}>
+          <div style={labelStyle}>Next week's theme poll (Hooks + Harmony only)</div>
+          <input
+            style={inputStyle}
+            value={pollQuestion}
+            onChange={(e) => setPollQuestion(e.target.value)}
+            placeholder="e.g. What should next week's theme be?"
+          />
+          {pollOptions.map((opt, i) => (
+            <input
+              key={i}
+              style={{ ...inputStyle, marginTop: 8 }}
+              value={opt}
+              onChange={(e) => {
+                const next = [...pollOptions];
+                next[i] = e.target.value;
+                setPollOptions(next);
+              }}
+              placeholder={`Option ${i + 1}${i < 2 ? "" : " (optional)"}`}
+            />
+          ))}
+          {pollError && <div style={{ marginTop: 10, fontSize: 13, color: "var(--signal)" }}>{pollError}</div>}
+          <button style={ghostBtnStyle} onClick={savePoll}>
+            Save poll (resets votes)
+          </button>
+
+          {state?.poll && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 13, color: "var(--gold)", marginBottom: 8 }}>
+                Currently live: "{state.poll.question}"
+              </div>
+              {(() => {
+                const counts: Record<string, number> = {};
+                (Object.values(state.poll!.votes) as string[]).forEach((opt: string) => {
+                  counts[opt] = (counts[opt] || 0) + 1;
+                });
+                const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0);
+                return state.poll.options.map((opt) => {
+                  const c = counts[opt] || 0;
+                  const pct = totalVotes ? Math.round((c / totalVotes) * 100) : 0;
+                  return (
+                    <div key={opt} style={{ marginBottom: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                        <span>{opt}</span>
+                        <span style={{ color: "var(--ink-dim)" }}>
+                          {c} vote{c === 1 ? "" : "s"} ({pct}%)
+                        </span>
+                      </div>
+                      <div style={{ height: 6, background: "var(--wire)", borderRadius: 4, marginTop: 3 }}>
+                        <div style={{ height: 6, width: `${pct}%`, background: "var(--gold)", borderRadius: 4 }} />
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={cardStyle}>
         <div style={labelStyle}>Now playing</div>
         <div style={{ fontSize: 16, fontWeight: 700 }}>
@@ -351,7 +434,7 @@ export default function DjPage() {
           </div>
         )}
         {state?.nowPlaying?.videoUrl && (
-          <a
+          
             href={state.nowPlaying.videoUrl}
             target="_blank"
             rel="noreferrer"
@@ -466,7 +549,7 @@ export default function DjPage() {
                       </div>
                     )}
                     {r.videoUrl && (
-                      <a
+                      
                         href={r.videoUrl}
                         target="_blank"
                         rel="noreferrer"
