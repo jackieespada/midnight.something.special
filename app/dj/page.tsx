@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import type { ShowState, Request as QueuedRequest } from "../../lib/state";
 
 type ShowId = "midnight-something-special" | "hooks-harmony";
@@ -37,6 +37,7 @@ export default function DjPage() {
 
   const [localQueue, setLocalQueue] = useState<QueuedRequest[]>([]);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const themeInitializedForShow = useRef<ShowId | null>(null);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -58,7 +59,12 @@ export default function DjPage() {
     const data = await res.json();
     setState(data);
     setLocalQueue(data.queue || []);
-    setThemeInput(data.theme || "");
+    // Only sync the theme box from the server once per show — otherwise the
+    // periodic poll below overwrites whatever you're mid-typing.
+    if (themeInitializedForShow.current !== show) {
+      setThemeInput(data.theme || "");
+      themeInitializedForShow.current = show;
+    }
   }
 
   useEffect(() => {
@@ -99,17 +105,20 @@ export default function DjPage() {
     load();
   }
 
-  async function boostToFront(index: number) {
+  async function boostToFront(id: string) {
     await fetch(`${apiPrefix}/queue-boost`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ index }),
+      body: JSON.stringify({ id }),
     });
     load();
   }
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   function startEdit(index: number, r: QueuedRequest) {
     setEditingIndex(index);
+    setEditingId(r.id);
     setEditTitle(r.title);
     setEditArtist(r.artist);
     setEditName(r.name || "");
@@ -123,7 +132,7 @@ export default function DjPage() {
     setEditError("");
   }
 
-  async function saveEdit(index: number) {
+  async function saveEdit() {
     setEditError("");
     if (!editTitle.trim() || !editArtist.trim()) {
       setEditError("Song and artist are required.");
@@ -133,7 +142,7 @@ export default function DjPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        index,
+        id: editingId,
         title: editTitle,
         artist: editArtist,
         name: editName,
@@ -147,6 +156,7 @@ export default function DjPage() {
       return;
     }
     setEditingIndex(null);
+    setEditingId(null);
     load();
   }
 
@@ -268,7 +278,7 @@ export default function DjPage() {
     await fetch(`${apiPrefix}/queue-reorder`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ order: localQueue }),
+      body: JSON.stringify({ order: localQueue.map((r) => r.id) }),
     });
     load();
   }
@@ -395,7 +405,7 @@ export default function DjPage() {
                     <div style={{ display: "flex", gap: 8 }}>
                       <button
                         style={{ flex: 1, background: "var(--gold)", border: "none", color: "#1a0f08", borderRadius: 8, padding: "8px 0", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
-                        onClick={() => saveEdit(i)}
+                        onClick={() => saveEdit()}
                       >
                         Save
                       </button>
@@ -444,7 +454,7 @@ export default function DjPage() {
                             fontSize: 11,
                             cursor: "pointer",
                           }}
-                          onClick={() => boostToFront(i)}
+                          onClick={() => boostToFront(r.id)}
                         >
                           ⬆ Boost
                         </button>
