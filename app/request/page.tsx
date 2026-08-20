@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Request as QueuedRequest } from "../../lib/state";
+import type { Request as QueuedRequest, Poll } from "../../lib/state";
 
 type ShowId = "midnight-something-special" | "hooks-harmony";
 
@@ -15,6 +15,9 @@ const SHOW_SCHEDULE: Record<ShowId, string> = {
   "hooks-harmony": "Saturdays 3PM ET",
 };
 
+// Overrides the shared CSS custom properties per show, since every color in
+// this page is already written as var(--gold) / var(--signal) / var(--haze) —
+// this just swaps what those variables point to based on which show is active.
 const SHOW_THEME: Record<ShowId, React.CSSProperties> = {
   "midnight-something-special": {},
   "hooks-harmony": {
@@ -44,6 +47,8 @@ export default function RequestPage() {
   const [tipAmount, setTipAmount] = useState("");
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
   const [theme, setEpisodeTheme] = useState("");
+  const [poll, setPoll] = useState<Poll | null>(null);
+  const [voting, setVoting] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [tipStatus, setTipStatus] = useState<"tipped" | "cancelled" | null>(null);
@@ -65,6 +70,7 @@ export default function RequestPage() {
     const data = await res.json();
     setQueue(data.queue || []);
     setEpisodeTheme(data.theme || "");
+    setPoll(data.poll || null);
   }
 
   useEffect(() => {
@@ -78,6 +84,17 @@ export default function RequestPage() {
     const url = new URL(window.location.href);
     url.searchParams.set("show", next);
     window.history.replaceState({}, "", url.toString());
+  }
+
+  async function castVote(option: string) {
+    setVoting(true);
+    await fetch("/api/hooks-harmony/poll-vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ option, visitorId: getVisitorId() }),
+    });
+    await loadState();
+    setVoting(false);
   }
 
   async function submit() {
@@ -206,6 +223,62 @@ export default function RequestPage() {
           🎨 Tonight's theme: {theme}
         </div>
       )}
+
+      {show === "hooks-harmony" && poll && poll.options.length > 0 && (
+        <div style={cardStyle}>
+          <div style={{ fontSize: 10.5, color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 8 }}>
+            🗳️ Vote: {poll.question}
+          </div>
+          {(() => {
+            const myVote = poll.votes[getVisitorId()];
+            const counts: Record<string, number> = {};
+            (Object.values(poll.votes) as string[]).forEach((opt: string) => {
+              counts[opt] = (counts[opt] || 0) + 1;
+            });
+            const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0);
+            return poll.options.map((opt) => {
+              const c = counts[opt] || 0;
+              const pct = totalVotes ? Math.round((c / totalVotes) * 100) : 0;
+              const mine = myVote === opt;
+              return (
+                <button
+                  key={opt}
+                  onClick={() => castVote(opt)}
+                  disabled={voting}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    background: mine ? "rgba(232,161,60,.16)" : "var(--stage)",
+                    border: mine ? "1px solid var(--gold)" : "1px solid var(--wire)",
+                    borderRadius: 12,
+                    padding: "10px 14px",
+                    marginBottom: 8,
+                    cursor: "pointer",
+                    color: "var(--ink)",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                    <span>
+                      {mine ? "✓ " : ""}
+                      {opt}
+                    </span>
+                    <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>
+                      {c} vote{c === 1 ? "" : "s"} ({pct}%)
+                    </span>
+                  </div>
+                  <div style={{ height: 5, background: "var(--wire)", borderRadius: 4, marginTop: 6 }}>
+                    <div style={{ height: 5, width: `${pct}%`, background: "var(--gold)", borderRadius: 4 }} />
+                  </div>
+                </button>
+              );
+            });
+          })()}
+          <div style={{ fontSize: 11, color: "var(--ink-dim)", marginTop: 4 }}>Tap a choice to vote — you can change your vote anytime.</div>
+        </div>
+      )}
+
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22, lineHeight: 1.5 }}>
         Type a song and artist. It drops into the queue and shows up on stream. Limit 2 free requests per person — tip to add more or bump ahead of the line.
       </p>
