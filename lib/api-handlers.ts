@@ -219,6 +219,7 @@ export function queueReorderHandler(showId: ShowId) {
     const byId = new Map(state.queue.map((r) => [r.id, r]));
     const reordered: typeof state.queue = [];
 
+    // Place items in the order the DJ dragged them into
     for (const id of order) {
       const item = byId.get(id);
       if (item) {
@@ -226,6 +227,8 @@ export function queueReorderHandler(showId: ShowId) {
         byId.delete(id);
       }
     }
+    // Anything left over arrived after the drag started (e.g. a new viewer
+    // request) — keep it instead of silently dropping it, tacked on the end.
     for (const item of byId.values()) {
       reordered.push(item);
     }
@@ -267,6 +270,8 @@ export function themeHandler(showId: ShowId) {
   };
 }
 
+// DJ sets/updates the poll question and options. Saving a new poll always
+// resets the vote tally to zero, since it's meant to represent a fresh poll.
 export function pollSetHandler(showId: ShowId) {
   return async function POST(req: Request) {
     const body = await req.json();
@@ -289,6 +294,8 @@ export function pollSetHandler(showId: ShowId) {
   };
 }
 
+// A viewer casts (or changes) their vote. One vote per visitorId — voting
+// again just overwrites their previous pick rather than adding a second vote.
 export function pollVoteHandler(showId: ShowId) {
   return async function POST(req: Request) {
     const body = await req.json();
@@ -305,6 +312,17 @@ export function pollVoteHandler(showId: ShowId) {
     }
 
     state.poll.votes[visitorId] = option;
+    await setState(showId, state);
+
+    return NextResponse.json({ ok: true, state });
+  };
+}
+
+// Removes the active poll entirely, so it stops showing on the request page.
+export function pollClearHandler(showId: ShowId) {
+  return async function POST() {
+    const state = await getState(showId);
+    state.poll = undefined;
     await setState(showId, state);
 
     return NextResponse.json({ ok: true, state });
