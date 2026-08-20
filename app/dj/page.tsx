@@ -124,6 +124,14 @@ export default function DjPage() {
     load();
   }
 
+  async function clearPoll() {
+    if (!confirm("Remove the current poll from the request page?")) return;
+    await fetch("/api/hooks-harmony/poll-clear", { method: "POST" });
+    setPollQuestion("");
+    setPollOptions(["", "", "", ""]);
+    load();
+  }
+
   async function advance() {
     await fetch(`${apiPrefix}/advance`, { method: "POST" });
     load();
@@ -378,6 +386,14 @@ export default function DjPage() {
           <button style={ghostBtnStyle} onClick={savePoll}>
             Save poll (resets votes)
           </button>
+          {state?.poll && (
+            <button
+              style={{ ...ghostBtnStyle, marginTop: 8, borderColor: "var(--signal)", color: "var(--signal)" }}
+              onClick={clearPoll}
+            >
+              Clear poll
+            </button>
+          )}
 
           {state?.poll && (
             <div style={{ marginTop: 16 }}>
