@@ -38,7 +38,7 @@ export default function OverlayPage() {
 
   const upNext = state?.queue?.[0] || null;
   const queueCount = state?.queue?.length ?? 0;
-  const isOpen = queueCount < MAX_QUEUE;
+  const isOpen = state?.requestsOpen !== false && queueCount < MAX_QUEUE;
 
   return (
     <div style={{ width: "1920px", height: "1080px", position: "relative", background: "transparent", overflow: "hidden" }}>
