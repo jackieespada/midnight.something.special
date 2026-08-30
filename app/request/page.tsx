@@ -15,9 +15,6 @@ const SHOW_SCHEDULE: Record<ShowId, string> = {
   "hooks-harmony": "Saturdays 3PM ET",
 };
 
-// Overrides the shared CSS custom properties per show, since every color in
-// this page is already written as var(--gold) / var(--signal) / var(--haze) —
-// this just swaps what those variables point to based on which show is active.
 const SHOW_THEME: any = {
   "midnight-something-special": {},
   "hooks-harmony": {
@@ -49,6 +46,7 @@ export default function RequestPage() {
   const [theme, setEpisodeTheme] = useState("");
   const [poll, setPoll] = useState<Poll | null>(null);
   const [voting, setVoting] = useState(false);
+  const [requestsOpen, setRequestsOpen] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [tipStatus, setTipStatus] = useState<"tipped" | "cancelled" | null>(null);
@@ -71,6 +69,7 @@ export default function RequestPage() {
     setQueue(data.queue || []);
     setEpisodeTheme(data.theme || "");
     setPoll(data.poll || null);
+    setRequestsOpen(data.requestsOpen !== false);
   }
 
   useEffect(() => {
@@ -226,6 +225,22 @@ export default function RequestPage() {
         </div>
       )}
 
+      {!requestsOpen && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "12px 16px",
+            borderRadius: 14,
+            background: "rgba(255,59,59,.12)",
+            border: "1px solid rgba(255,59,59,.4)",
+            color: "#ff8a8a",
+            fontSize: 14,
+          }}
+        >
+          🔴 Free requests are closed for tonight — the lineup's locked in! You can still tip below to add your song.
+        </div>
+      )}
+
       {show === "hooks-harmony" && poll && poll.options.length > 0 && (
         <div style={cardStyle}>
           <div style={{ fontSize: 10.5, color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 8 }}>
@@ -317,9 +332,15 @@ export default function RequestPage() {
           onChange={(e) => setVideoUrl(e.target.value)}
           placeholder="Paste a YouTube link"
         />
-        <button style={btnStyle} onClick={submit}>
-          Submit request
-        </button>
+        {requestsOpen ? (
+          <button style={btnStyle} onClick={submit}>
+            Submit request
+          </button>
+        ) : (
+          <button style={{ ...btnStyle, opacity: 0.4, cursor: "not-allowed" }} disabled>
+            Free requests closed for tonight
+          </button>
+        )}
         {showToast && (
           <div style={{ marginTop: 12, fontSize: 13, color: "var(--gold)" }}>
             Added to the queue — watch for it on stream.
