@@ -29,6 +29,13 @@ export function requestHandler(showId: ShowId) {
 
     const state = await getState(showId);
 
+    if (state.requestsOpen === false) {
+      return NextResponse.json(
+        { error: "Requests are closed for tonight — but you can still tip to add your song!" },
+        { status: 400 }
+      );
+    }
+
     if (state.queue.length >= MAX_QUEUE) {
       return NextResponse.json(
         { error: "Requests are full for tonight — but you can still tip to jump the line!" },
@@ -219,7 +226,6 @@ export function queueReorderHandler(showId: ShowId) {
     const byId = new Map(state.queue.map((r) => [r.id, r]));
     const reordered: typeof state.queue = [];
 
-    // Place items in the order the DJ dragged them into
     for (const id of order) {
       const item = byId.get(id);
       if (item) {
@@ -227,8 +233,6 @@ export function queueReorderHandler(showId: ShowId) {
         byId.delete(id);
       }
     }
-    // Anything left over arrived after the drag started (e.g. a new viewer
-    // request) — keep it instead of silently dropping it, tacked on the end.
     for (const item of byId.values()) {
       reordered.push(item);
     }
@@ -270,8 +274,23 @@ export function themeHandler(showId: ShowId) {
   };
 }
 
-// DJ sets/updates the poll question and options. Saving a new poll always
-// resets the vote tally to zero, since it's meant to represent a fresh poll.
+// DJ toggles requests open/closed for the night. Manual override — separate
+// from the automatic 20-song cap, since the pending queue count naturally
+// shrinks as songs play even after the DJ has already decided the lineup
+// for the night is set.
+export function requestsOpenHandler(showId: ShowId) {
+  return async function POST(req: Request) {
+    const body = await req.json();
+    const open = Boolean(body.open);
+
+    const state = await getState(showId);
+    state.requestsOpen = open;
+    await setState(showId, state);
+
+    return NextResponse.json({ ok: true, state });
+  };
+}
+
 function tallyPoll(poll: { question: string; options: string[]; votes: Record<string, string> }): PollResult {
   const counts: Record<string, number> = {};
   for (const opt of poll.options) counts[opt] = 0;
@@ -302,7 +321,6 @@ export function pollSetHandler(showId: ShowId) {
 
     const state = await getState(showId);
     if (!state.pollHistory) state.pollHistory = [];
-    // Archive the outgoing poll's results before replacing it with the new one
     if (state.poll) {
       state.pollHistory.unshift(tallyPoll(state.poll));
     }
@@ -313,8 +331,6 @@ export function pollSetHandler(showId: ShowId) {
   };
 }
 
-// A viewer casts (or changes) their vote. One vote per visitorId — voting
-// again just overwrites their previous pick rather than adding a second vote.
 export function pollVoteHandler(showId: ShowId) {
   return async function POST(req: Request) {
     const body = await req.json();
@@ -337,7 +353,6 @@ export function pollVoteHandler(showId: ShowId) {
   };
 }
 
-// Removes the active poll entirely, so it stops showing on the request page.
 export function pollClearHandler(showId: ShowId) {
   return async function POST() {
     const state = await getState(showId);

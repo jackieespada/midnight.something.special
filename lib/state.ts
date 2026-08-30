@@ -29,6 +29,7 @@ export type ShowState = {
   theme?: string;
   poll?: Poll;
   pollHistory?: PollResult[];
+  requestsOpen?: boolean;
 };
 
 export const MAX_QUEUE = 20;
@@ -102,6 +103,7 @@ export async function getState(showId: ShowId): Promise<ShowState> {
         if (!parsed.submitterCounts) parsed.submitterCounts = {};
         if (parsed.theme === undefined) parsed.theme = "";
         if (!parsed.pollHistory) parsed.pollHistory = [];
+        if (parsed.requestsOpen === undefined) parsed.requestsOpen = true;
         return parsed;
       }
     } catch {
