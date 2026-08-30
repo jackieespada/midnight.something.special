@@ -44,6 +44,7 @@ export default function DjPage() {
   const themeInitializedForShow = useRef<ShowId | null>(null);
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editArtist, setEditArtist] = useState("");
   const [editName, setEditName] = useState("");
@@ -63,8 +64,6 @@ export default function DjPage() {
     const data = await res.json();
     setState(data);
     setLocalQueue(data.queue || []);
-    // Only sync the theme box from the server once per show — otherwise the
-    // periodic poll below overwrites whatever you're mid-typing.
     if (themeInitializedForShow.current !== show) {
       setThemeInput(data.theme || "");
       themeInitializedForShow.current = show;
@@ -82,6 +81,16 @@ export default function DjPage() {
     const url = new URL(window.location.href);
     url.searchParams.set("show", next);
     window.history.replaceState({}, "", url.toString());
+  }
+
+  async function toggleRequestsOpen() {
+    const nextOpen = !(state?.requestsOpen !== false);
+    await fetch(`${apiPrefix}/requests-open`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ open: nextOpen }),
+    });
+    load();
   }
 
   async function saveNowPlaying() {
@@ -145,8 +154,6 @@ export default function DjPage() {
     });
     load();
   }
-
-  const [editingId, setEditingId] = useState<string | null>(null);
 
   function startEdit(index: number, r: QueuedRequest) {
     setEditingIndex(index);
@@ -316,6 +323,7 @@ export default function DjPage() {
   }
 
   const queueCount = state?.queue?.length || 0;
+  const requestsOpen = state?.requestsOpen !== false;
   const rootStyle = { maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh", ...SHOW_THEME[show] };
 
   return (
@@ -346,6 +354,35 @@ export default function DjPage() {
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22 }}>
         Not linked from anywhere public — keep this URL to yourself. Advance the queue here while you're live.
       </p>
+
+      <div style={cardStyle}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={labelStyle}>Requests</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: requestsOpen ? "#39ff6a" : "#ff3b3b" }}>
+              {requestsOpen ? "OPEN" : "CLOSED"}
+            </div>
+          </div>
+          <button
+            onClick={toggleRequestsOpen}
+            style={{
+              padding: "10px 18px",
+              borderRadius: 999,
+              border: "none",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              background: requestsOpen ? "#ff3b3b" : "#39ff6a",
+              color: "#0a0a0a",
+            }}
+          >
+            {requestsOpen ? "Close requests" : "Open requests"}
+          </button>
+        </div>
+        <p style={{ color: "var(--ink-dim)", fontSize: 12, marginTop: 8, marginBottom: 0 }}>
+          Closing stops new free requests (and shows "closed" on the overlay), but tips can still get in.
+        </p>
+      </div>
 
       <div style={cardStyle}>
         <div style={labelStyle}>Tonight's theme (shown on the request page)</div>
