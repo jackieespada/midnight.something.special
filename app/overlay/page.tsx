@@ -7,6 +7,7 @@ import type { ShowState } from "../../lib/state";
 // Set this to your real request page URL once deployed, e.g.
 // https://midnightsomethingspecial.vercel.app/request
 const REQUEST_URL_FALLBACK = "https://jackieespada.com/request?show=midnight-something-special";
+const MAX_QUEUE = 20;
 
 export default function OverlayPage() {
   const [state, setState] = useState<ShowState | null>(null);
@@ -36,6 +37,8 @@ export default function OverlayPage() {
   }, []);
 
   const upNext = state?.queue?.[0] || null;
+  const queueCount = state?.queue?.length ?? 0;
+  const isOpen = queueCount < MAX_QUEUE;
 
   return (
     <div style={{ width: "1920px", height: "1080px", position: "relative", background: "transparent", overflow: "hidden" }}>
@@ -97,14 +100,49 @@ export default function OverlayPage() {
           </div>
         </div>
 
-        <div style={panelStyle("right")}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 8 }}>
-            <span style={dotStyle} />
-            <span style={tagStyle}>Request</span>
+        <div style={{ position: "absolute", top: "50%", right: "99px", transform: "translateY(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+          <VacancySign isOpen={isOpen} />
+          <div style={boxVisualStyle()}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 8 }}>
+              <span style={dotStyle} />
+              <span style={tagStyle}>Request</span>
+            </div>
+            {qrDataUrl && <img src={qrDataUrl} alt="QR code to request a song" style={{ width: "100%", borderRadius: 6 }} />}
+            <div style={{ color: "var(--ink-dim)", fontSize: 14, marginTop: 10, wordBreak: "break-all" }}>jackieespada.com/request</div>
           </div>
-          {qrDataUrl && <img src={qrDataUrl} alt="QR code to request a song" style={{ width: "100%", borderRadius: 6 }} />}
-          <div style={{ color: "var(--ink-dim)", fontSize: 14, marginTop: 10, wordBreak: "break-all" }}>jackieespada.com/request</div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function VacancySign({ isOpen }: { isOpen: boolean }) {
+  const color = isOpen ? "#39ff6a" : "#ff3b3b";
+  return (
+    <div
+      style={{
+        background: "rgba(10,8,6,.92)",
+        border: `2px solid ${color}`,
+        borderRadius: 12,
+        padding: "10px 22px",
+        textAlign: "center",
+        boxShadow: `0 0 18px ${color}, 0 0 6px ${color}`,
+      }}
+    >
+      <div style={{ fontSize: 11, letterSpacing: ".15em", color: "var(--ink-dim)", textTransform: "uppercase", marginBottom: 2 }}>
+        Requests
+      </div>
+      <div
+        style={{
+          fontSize: 20,
+          fontWeight: 800,
+          letterSpacing: ".1em",
+          color,
+          textShadow: `0 0 8px ${color}, 0 0 18px ${color}`,
+          animation: isOpen ? "pulse 2.2s infinite" : "none",
+        }}
+      >
+        {isOpen ? "OPEN" : "CLOSED"}
       </div>
     </div>
   );
@@ -124,6 +162,18 @@ function panelStyle(side: "left" | "right"): React.CSSProperties {
     boxShadow: "0 0 20px rgba(232,161,60,.4)",
     textAlign: "center",
   } as React.CSSProperties;
+}
+
+function boxVisualStyle(): React.CSSProperties {
+  return {
+    background: "rgba(12,7,5,.9)",
+    border: "3px solid var(--gold)",
+    borderRadius: 18,
+    padding: 28,
+    width: "320px",
+    boxShadow: "0 0 20px rgba(232,161,60,.4)",
+    textAlign: "center",
+  };
 }
 
 const dotStyle: React.CSSProperties = {
