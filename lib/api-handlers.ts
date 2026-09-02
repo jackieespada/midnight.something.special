@@ -177,6 +177,25 @@ export function queueBoostHandler(showId: ShowId) {
   };
 }
 
+export function queueDeleteHandler(showId: ShowId) {
+  return async function POST(req: Request) {
+    const body = await req.json();
+    const id = (body.id || "").toString();
+
+    const state = await getState(showId);
+    const index = state.queue.findIndex((r) => r.id === id);
+
+    if (index === -1) {
+      return NextResponse.json({ error: "That request isn't in the queue anymore." }, { status: 400 });
+    }
+
+    state.queue.splice(index, 1);
+    await setState(showId, state);
+
+    return NextResponse.json({ ok: true, state });
+  };
+}
+
 export function queueEditHandler(showId: ShowId) {
   return async function POST(req: Request) {
     const body = await req.json();
