@@ -155,6 +155,16 @@ export default function DjPage() {
     load();
   }
 
+  async function deleteRequest(id: string) {
+    if (!confirm("Remove this request from the queue?")) return;
+    await fetch(`${apiPrefix}/queue-delete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    load();
+  }
+
   function startEdit(index: number, r: QueuedRequest) {
     setEditingIndex(index);
     setEditingId(r.id);
@@ -631,6 +641,20 @@ export default function DjPage() {
                           onClick={() => boostToFront(r.id)}
                         >
                           ⬆ Boost
+                        </button>
+                        <button
+                          style={{
+                            background: "transparent",
+                            border: "1px solid var(--signal)",
+                            color: "var(--signal)",
+                            borderRadius: 8,
+                            padding: "3px 8px",
+                            fontSize: 11,
+                            cursor: "pointer",
+                          }}
+                          onClick={() => deleteRequest(r.id)}
+                        >
+                          ✕ Delete
                         </button>
                       </span>
                     </div>
