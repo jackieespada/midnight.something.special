@@ -3,14 +3,15 @@
 import { useEffect, useState } from "react";
 import type { LinkItem, CalendarEntry, AffiliateItem, Suggestion } from "@/lib/site-state";
 
-type Tab = "links" | "calendar" | "affiliates" | "suggestions";
+type Tab = "profile" | "links" | "calendar" | "affiliates" | "suggestions";
 
 function newId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
 export default function SiteAdminPage() {
-  const [tab, setTab] = useState<Tab>("links");
+  const [tab, setTab] = useState<Tab>("profile");
+  const [photoUrl, setPhotoUrl] = useState("");
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [calendar, setCalendar] = useState<CalendarEntry[]>([]);
   const [affiliates, setAffiliates] = useState<AffiliateItem[]>([]);
@@ -21,6 +22,7 @@ export default function SiteAdminPage() {
     fetch("/api/site/state", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
+        setPhotoUrl(data.photoUrl || "");
         setLinks(data.links || []);
         setCalendar(data.calendar || []);
         setAffiliates(data.affiliates || []);
@@ -31,6 +33,16 @@ export default function SiteAdminPage() {
   }
 
   useEffect(loadAll, []);
+
+  async function savePhoto(next: string) {
+    setPhotoUrl(next);
+    await fetch("/api/site/photo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ photoUrl: next }),
+    });
+    flash("Photo saved.");
+  }
 
   async function saveLinks(next: LinkItem[]) {
     setLinks(next);
@@ -92,12 +104,13 @@ export default function SiteAdminPage() {
         <p style={styles.sub}>Edit everything on jackieespada.com — changes save instantly.</p>
 
         <div style={styles.tabs}>
-          {(["links", "calendar", "affiliates", "suggestions"] as Tab[]).map((t) => (
+          {(["profile", "links", "calendar", "affiliates", "suggestions"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               style={tab === t ? styles.tabActive : styles.tab}
             >
+              {t === "profile" && "Profile"}
               {t === "links" && "Links"}
               {t === "calendar" && "Calendar"}
               {t === "affiliates" && "Shop My Favorites"}
@@ -108,6 +121,9 @@ export default function SiteAdminPage() {
 
         {status && <div style={styles.flash}>{status}</div>}
 
+        {tab === "profile" && (
+          <ProfileEditor photoUrl={photoUrl} onSave={savePhoto} />
+        )}
         {tab === "links" && (
           <LinksEditor links={links} onSave={saveLinks} />
         )}
@@ -121,6 +137,35 @@ export default function SiteAdminPage() {
           <SuggestionsList suggestions={suggestions} onRead={markRead} onDelete={deleteSuggestion} />
         )}
       </div>
+    </div>
+  );
+}
+
+// ---------- Profile ----------
+function ProfileEditor({ photoUrl, onSave }: { photoUrl: string; onSave: (url: string) => void }) {
+  const [local, setLocal] = useState(photoUrl);
+  useEffect(() => setLocal(photoUrl), [photoUrl]);
+
+  return (
+    <div>
+      <p style={{ color: "#c2a488", fontSize: 13.5, marginBottom: 14 }}>
+        Paste a link to a photo that's already hosted somewhere (Imgur, a Google Drive share link, etc.).
+        This is what shows up as your profile picture on jackieespada.com.
+      </p>
+      {local && (
+        <img
+          src={local}
+          alt="Preview"
+          style={{ width: 120, height: 120, borderRadius: "50%", objectFit: "cover", marginBottom: 14, border: "2px solid #5a3a24" }}
+        />
+      )}
+      <input
+        style={{ ...styles.input, width: "100%", marginBottom: 12 }}
+        value={local}
+        onChange={(e) => setLocal(e.target.value)}
+        placeholder="https://..."
+      />
+      <button style={styles.saveBtn} onClick={() => onSave(local)}>Save Photo</button>
     </div>
   );
 }
