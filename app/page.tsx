@@ -9,6 +9,7 @@ const DOT_COLOR: Record<string, string> = {
 };
 
 export default function LandingPage() {
+  const [photoUrl, setPhotoUrl] = useState("");
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [calendar, setCalendar] = useState<CalendarEntry[]>([]);
   const [calView, setCalView] = useState<"week" | "month">("week");
@@ -20,6 +21,7 @@ export default function LandingPage() {
     fetch("/api/site/state", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
+        setPhotoUrl(data.photoUrl || "");
         setLinks(data.links || []);
         setCalendar(
           (data.calendar || []).slice().sort(
@@ -67,7 +69,14 @@ export default function LandingPage() {
     <div style={styles.page}>
       <div style={styles.wrap}>
         <div style={styles.header}>
-          <div style={styles.avatar} />
+                    <div
+            style={{
+              ...styles.avatar,
+              ...(photoUrl
+                ? { backgroundImage: `url(${photoUrl})`, backgroundSize: "cover", backgroundPosition: "center" }
+                : {}),
+            }}
+          />
           <h1 style={styles.h1}>Jackie Espada</h1>
           <p style={styles.headerP}>
             Bible study, music, and community — real talk, not a sermon. Pick a show below or send in a request.
