@@ -55,6 +55,7 @@ function makeId(): string {
 // is editable from /site-admin afterward.
 function defaultSiteState(): SiteState {
   return {
+    photoUrl: "",
     links: [
       { id: makeId(), label: "Ko-fi — Support the Show", url: "https://ko-fi.com/", section: "support", enabled: true },
       { id: makeId(), label: "TikTok", url: "https://tiktok.com/", section: "social", enabled: true },
