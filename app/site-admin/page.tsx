@@ -226,6 +226,10 @@ function CalendarEditor({ calendar, onSave }: { calendar: CalendarEntry[]; onSav
 
   return (
     <div>
+      <p style={{ color: "#c2a488", fontSize: 13, marginBottom: 14 }}>
+        Leave "One-time date" blank for a show that repeats every week. Fill in a date to add a single
+        special that shows up only on that day (like a guest episode) without repeating.
+      </p>
       {local.map((c) => (
         <div key={c.id} style={styles.row}>
           <select style={styles.select} value={c.day} onChange={(e) => update(c.id, "day", e.target.value)}>
@@ -234,6 +238,13 @@ function CalendarEditor({ calendar, onSave }: { calendar: CalendarEntry[]; onSav
           <input style={styles.input} value={c.time} onChange={(e) => update(c.id, "time", e.target.value)} placeholder="Time" />
           <input style={styles.input} value={c.showName} onChange={(e) => update(c.id, "showName", e.target.value)} placeholder="Show name" />
           <input style={styles.input} value={c.note || ""} onChange={(e) => update(c.id, "note", e.target.value)} placeholder="Note (optional)" />
+          <input
+            style={styles.input}
+            type="date"
+            value={c.date || ""}
+            onChange={(e) => update(c.id, "date", e.target.value)}
+            title="One-time date (optional) — leave blank for a weekly recurring show"
+          />
           <input style={styles.input} value={c.linksTo || ""} onChange={(e) => update(c.id, "linksTo", e.target.value)} placeholder="Links to (e.g. /request)" />
           <button style={styles.removeBtn} onClick={() => remove(c.id)}>Remove</button>
         </div>
