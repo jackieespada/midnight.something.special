@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "The Midnight Something Special",
-  description: "Song request queue and stream overlay",
+  title: "Jackie Espada",
+  description: "Bible study, music, and community — real talk, not a sermon.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
