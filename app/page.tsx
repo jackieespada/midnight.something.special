@@ -31,6 +31,12 @@ export default function LandingPage() {
       });
   }, []);
 
+  function formatSpecialDate(dateStr: string) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
+  }
+
   async function sendSuggestion() {
     if (!suggestText.trim()) return;
     setSuggestStatus("sending");
@@ -58,18 +64,25 @@ export default function LandingPage() {
   const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const pad = (n: number) => String(n).padStart(2, "0");
   const dowToEntries: Record<number, CalendarEntry[]> = {};
+  const dateToEntries: Record<string, CalendarEntry[]> = {};
   calendar.forEach((entry) => {
-    const idx = DAY_ORDER.indexOf(entry.day);
-    if (!dowToEntries[idx]) dowToEntries[idx] = [];
-    dowToEntries[idx].push(entry);
+    if (entry.date) {
+      if (!dateToEntries[entry.date]) dateToEntries[entry.date] = [];
+      dateToEntries[entry.date].push(entry);
+    } else {
+      const idx = DAY_ORDER.indexOf(entry.day);
+      if (!dowToEntries[idx]) dowToEntries[idx] = [];
+      dowToEntries[idx].push(entry);
+    }
   });
 
   return (
     <div style={styles.page}>
       <div style={styles.wrap}>
         <div style={styles.header}>
-                    <div
+          <div
             style={{
               ...styles.avatar,
               ...(photoUrl
@@ -129,7 +142,9 @@ export default function LandingPage() {
                   href={entry.linksTo || "#"}
                   style={{ ...styles.calRow, textDecoration: "none", color: "inherit" }}
                 >
-                  <div style={styles.calDay}>{entry.day.toUpperCase()}</div>
+                  <div style={styles.calDay}>
+                    {entry.date ? formatSpecialDate(entry.date) : entry.day.toUpperCase()}
+                  </div>
                   <div>
                     <div style={{ fontSize: 14 }}>{entry.showName}</div>
                     {entry.note && <div style={styles.calNote}>{entry.note}</div>}
@@ -155,7 +170,8 @@ export default function LandingPage() {
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const d = i + 1;
                   const dow = new Date(year, month, d).getDay();
-                  const entries = dowToEntries[dow] || [];
+                  const dateKey = `${year}-${pad(month + 1)}-${pad(d)}`;
+                  const entries = [...(dowToEntries[dow] || []), ...(dateToEntries[dateKey] || [])];
                   return (
                     <div key={d} style={styles.dayCell}>
                       <div style={styles.dayNum}>{d}</div>
