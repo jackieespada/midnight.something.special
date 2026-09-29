@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 // not for the public site to display.
 export async function GET() {
   const state = await getSiteState();
-  return NextResponse.json({
+    return NextResponse.json({
     links: state.links,
     calendar: state.calendar,
     affiliates: state.affiliates,
+    photoUrl: state.photoUrl,
   });
-}
