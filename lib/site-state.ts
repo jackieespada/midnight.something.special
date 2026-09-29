@@ -18,6 +18,7 @@ export type CalendarEntry = {
   showName: string;    // e.g. "Bible Study for Overthinkers"
   note?: string;        // e.g. "with BayTheaterDave", "on Badlands Media", "not consistently run"
   linksTo?: string;      // optional path, e.g. "/request" or "/hooks-harmony"
+  date?: string;          // "YYYY-MM-DD" — if set, this is a ONE-TIME special on that exact date instead of a weekly recurring show
 };
 
 export type Suggestion = {
