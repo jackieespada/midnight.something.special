@@ -43,6 +43,7 @@ export type SiteState = {
   calendar: CalendarEntry[];
   suggestions: Suggestion[];
   affiliates: AffiliateItem[];
+  photoUrl?: string;
 };
 
 function makeId(): string {
