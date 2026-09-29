@@ -23,6 +23,11 @@ const PROTECTED_PATHS = [
   "/api/hooks-harmony/theme",
   "/api/hooks-harmony/poll-set",
   "/api/hooks-harmony/poll-clear",
+  "/site-admin",
+  "/api/site/links",
+  "/api/site/calendar",
+  "/api/site/affiliates",
+  "/api/site/suggestions-admin",
 ];
 
 // Uses the Web Crypto API (available in both the Edge runtime middleware
