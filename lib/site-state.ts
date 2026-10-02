@@ -39,12 +39,21 @@ export type AffiliateItem = {
   enabled: boolean;
 };
 
+export type Supporter = {
+  id: string;
+  name?: string;
+  message?: string;
+  amountCents: number;
+  ts: number;
+};
+
 export type SiteState = {
   links: LinkItem[];
   calendar: CalendarEntry[];
   suggestions: Suggestion[];
   affiliates: AffiliateItem[];
   photoUrl?: string;
+  supporters: Supporter[];
 };
 
 function makeId(): string {
@@ -57,6 +66,7 @@ function makeId(): string {
 function defaultSiteState(): SiteState {
   return {
     photoUrl: "",
+    supporters: [],
     links: [
       { id: makeId(), label: "Ko-fi — Support the Show", url: "https://ko-fi.com/", section: "support", enabled: true },
       { id: makeId(), label: "TikTok", url: "https://tiktok.com/", section: "social", enabled: true },
@@ -115,6 +125,7 @@ export async function getSiteState(): Promise<SiteState> {
         if (!parsed.calendar) parsed.calendar = [];
         if (!parsed.suggestions) parsed.suggestions = [];
         if (!parsed.affiliates) parsed.affiliates = [];
+        if (!parsed.supporters) parsed.supporters = [];
         return parsed;
       }
     } catch {
