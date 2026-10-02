@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { LinkItem, CalendarEntry } from "@/lib/site-state";
+import type { LinkItem, CalendarEntry, Supporter } from "@/lib/site-state";
 
 const DAY_ORDER = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DOT_COLOR: Record<string, string> = {
@@ -17,6 +17,12 @@ export default function LandingPage() {
   const [suggestName, setSuggestName] = useState("");
   const [suggestStatus, setSuggestStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
+  const [supporters, setSupporters] = useState<Supporter[]>([]);
+  const [supAmount, setSupAmount] = useState("10");
+  const [supName, setSupName] = useState("");
+  const [supMessage, setSupMessage] = useState("");
+  const [supStatus, setSupStatus] = useState<"idle" | "sending" | "error">("idle");
+
   useEffect(() => {
     fetch("/api/site/state", { cache: "no-store" })
       .then((r) => r.json())
@@ -27,6 +33,9 @@ export default function LandingPage() {
           (data.calendar || []).slice().sort(
             (a: CalendarEntry, b: CalendarEntry) => DAY_ORDER.indexOf(a.day) - DAY_ORDER.indexOf(b.day)
           )
+        );
+        setSupporters(
+          (data.supporters || []).slice().sort((a: Supporter, b: Supporter) => b.ts - a.ts)
         );
       });
   }, []);
@@ -51,6 +60,30 @@ export default function LandingPage() {
       setSuggestName("");
     } else {
       setSuggestStatus("error");
+    }
+  }
+
+  async function startSupportCheckout() {
+    const amount = Number(supAmount);
+    if (!amount || amount < 1) {
+      setSupStatus("error");
+      return;
+    }
+    setSupStatus("sending");
+    try {
+      const res = await fetch("/api/site/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, name: supName, message: supMessage }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setSupStatus("error");
+      }
+    } catch {
+      setSupStatus("error");
     }
   }
 
@@ -197,6 +230,65 @@ export default function LandingPage() {
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+
+        <div style={styles.section}>
+          <div style={styles.sectionTitle}>Become a Monthly Supporter</div>
+          <div style={styles.suggestBox}>
+            <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "#c9b8e0" }}>
+              Pick your own monthly amount. You can cancel anytime from the email Stripe sends you.
+              Your name and a short message can show up on the wall below (totally optional).
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ fontSize: 20, fontWeight: 700 }}>$</span>
+              <input
+                type="number"
+                min={1}
+                value={supAmount}
+                onChange={(e) => setSupAmount(e.target.value)}
+                style={{ ...styles.input, marginTop: 0, width: 100 }}
+              />
+              <span style={{ fontSize: 13, color: "#c9b8e0" }}>/ month</span>
+            </div>
+            <input
+              value={supName}
+              onChange={(e) => setSupName(e.target.value)}
+              placeholder="Your name (optional)"
+              style={styles.input}
+            />
+            <input
+              value={supMessage}
+              onChange={(e) => setSupMessage(e.target.value)}
+              placeholder="A short message for the wall (optional)"
+              style={styles.input}
+            />
+            <button onClick={startSupportCheckout} style={styles.suggestBtn} disabled={supStatus === "sending"}>
+              {supStatus === "sending" ? "Redirecting to checkout..." : "Become a Supporter"}
+            </button>
+            {supStatus === "error" && (
+              <div style={{ color: "#ff3fa4", marginTop: 8, fontSize: 12.5 }}>
+                Enter an amount of at least $1 and try again.
+              </div>
+            )}
+          </div>
+
+          {supporters.length > 0 && (
+            <div style={{ marginTop: 18 }}>
+              {supporters.map((s) => (
+                <div key={s.id} style={styles.supporterCard}>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>
+                    {s.name || "Anonymous"}{" "}
+                    <span style={{ color: "#4dd9e8", fontWeight: 600 }}>
+                      · ${(s.amountCents / 100).toFixed(0)}/mo
+                    </span>
+                  </div>
+                  {s.message && (
+                    <div style={{ fontSize: 13, color: "#c9b8e0", marginTop: 4 }}>{s.message}</div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -434,6 +526,13 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid rgba(255,255,255,.14)",
     borderRadius: 18,
     padding: 20,
+  },
+  supporterCard: {
+    background: "rgba(255,255,255,.04)",
+    border: "1px solid rgba(255,255,255,.1)",
+    borderRadius: 14,
+    padding: "12px 16px",
+    marginBottom: 8,
   },
   textarea: {
     width: "100%",
