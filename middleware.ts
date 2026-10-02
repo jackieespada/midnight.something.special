@@ -29,6 +29,7 @@ const PROTECTED_PATHS = [
   "/api/site/affiliates",
   "/api/site/suggestions-admin",
   "/api/site/photo",
+  "/api/site/supporters-admin",
 ];
 
 // Uses the Web Crypto API (available in both the Edge runtime middleware
