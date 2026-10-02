@@ -13,5 +13,6 @@ export async function GET() {
     calendar: state.calendar,
     affiliates: state.affiliates,
     photoUrl: state.photoUrl,
+    supporters: state.supporters,
   });
 }
