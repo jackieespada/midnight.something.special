@@ -267,10 +267,18 @@ export default function LandingPage() {
             <button onClick={startSupportCheckout} style={styles.suggestBtn} disabled={supStatus === "sending"}>
               {supStatus === "sending" ? "Redirecting to checkout..." : "Become a Supporter"}
             </button>
-            {supStatus === "error" && (
+              {supStatus === "error" && (
               <div style={{ color: "#ff3fa4", marginTop: 8, fontSize: 12.5 }}>
                 Enter an amount of at least $1 and try again.
               </div>
+            )}
+            {links.find((l) => l.label.toLowerCase().includes("manage") || l.label.toLowerCase().includes("cancel")) && (
+              <a
+                href={links.find((l) => l.label.toLowerCase().includes("manage") || l.label.toLowerCase().includes("cancel"))!.url}
+                style={{ display: "block", textAlign: "center", marginTop: 12, fontSize: 12, color: "#c9b8e0" }}
+              >
+                Already a supporter? Manage or cancel anytime
+              </a>
             )}
           </div>
 
