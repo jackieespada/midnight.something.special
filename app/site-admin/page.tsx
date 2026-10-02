@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { LinkItem, CalendarEntry, AffiliateItem, Suggestion } from "@/lib/site-state";
+import type { LinkItem, CalendarEntry, AffiliateItem, Suggestion, Supporter } from "@/lib/site-state";
 
-type Tab = "profile" | "links" | "calendar" | "affiliates" | "suggestions";
+type Tab = "profile" | "links" | "calendar" | "affiliates" | "suggestions" | "supporters";
 
 function newId() {
   return Math.random().toString(36).slice(2, 10);
@@ -16,6 +16,7 @@ export default function SiteAdminPage() {
   const [calendar, setCalendar] = useState<CalendarEntry[]>([]);
   const [affiliates, setAffiliates] = useState<AffiliateItem[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [status, setStatus] = useState("");
 
   function loadAll() {
@@ -30,6 +31,9 @@ export default function SiteAdminPage() {
     fetch("/api/site/suggestions-admin", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => setSuggestions(data.suggestions || []));
+    fetch("/api/site/supporters-admin", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => setSupporters(data.supporters || []));
   }
 
   useEffect(loadAll, []);
@@ -97,6 +101,15 @@ export default function SiteAdminPage() {
     });
   }
 
+  async function deleteSupporter(id: string) {
+    setSupporters((prev) => prev.filter((s) => s.id !== id));
+    await fetch("/api/site/supporters-admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+  }
+
   return (
     <div style={styles.page}>
       <div style={styles.wrap}>
@@ -104,7 +117,7 @@ export default function SiteAdminPage() {
         <p style={styles.sub}>Edit everything on jackieespada.com — changes save instantly.</p>
 
         <div style={styles.tabs}>
-          {(["profile", "links", "calendar", "affiliates", "suggestions"] as Tab[]).map((t) => (
+          {(["profile", "links", "calendar", "affiliates", "suggestions", "supporters"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -115,6 +128,7 @@ export default function SiteAdminPage() {
               {t === "calendar" && "Calendar"}
               {t === "affiliates" && "Shop My Favorites"}
               {t === "suggestions" && `Suggestions${suggestions.filter((s) => !s.read).length ? ` (${suggestions.filter((s) => !s.read).length})` : ""}`}
+              {t === "supporters" && `Supporters${supporters.length ? ` (${supporters.length})` : ""}`}
             </button>
           ))}
         </div>
@@ -135,6 +149,9 @@ export default function SiteAdminPage() {
         )}
         {tab === "suggestions" && (
           <SuggestionsList suggestions={suggestions} onRead={markRead} onDelete={deleteSuggestion} />
+        )}
+        {tab === "supporters" && (
+          <SupportersList supporters={supporters} onDelete={deleteSupporter} />
         )}
       </div>
     </div>
@@ -314,6 +331,43 @@ function SuggestionsList({
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
             {!s.read && <button style={styles.addBtn} onClick={() => onRead(s.id)}>Mark read</button>}
+            <button style={styles.removeBtn} onClick={() => onDelete(s.id)}>Delete</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---------- Supporters ----------
+function SupportersList({
+  supporters,
+  onDelete,
+}: {
+  supporters: Supporter[];
+  onDelete: (id: string) => void;
+}) {
+  if (supporters.length === 0) {
+    return <p style={{ color: "#c2a488" }}>No monthly supporters yet.</p>;
+  }
+  return (
+    <div>
+      <p style={{ color: "#c2a488", fontSize: 13, marginBottom: 14 }}>
+        These are the people currently showing up on your public supporter wall.
+        Delete one here if something needs to be taken down.
+      </p>
+      {supporters.map((s) => (
+        <div key={s.id} style={{ ...styles.row, flexDirection: "column", alignItems: "flex-start" }}>
+          <div style={{ fontSize: 14, fontWeight: 700 }}>
+            {s.name || "Anonymous"} — ${(s.amountCents / 100).toFixed(2)}/mo
+          </div>
+          {s.message && (
+            <div style={{ fontSize: 13, color: "#fbeedd", marginTop: 4 }}>{s.message}</div>
+          )}
+          <div style={{ fontSize: 12, color: "#c2a488", marginTop: 6 }}>
+            {new Date(s.ts).toLocaleString()}
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
             <button style={styles.removeBtn} onClick={() => onDelete(s.id)}>Delete</button>
           </div>
         </div>
