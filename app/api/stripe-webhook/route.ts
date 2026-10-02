@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getState, setState, insertTippedRequest, ShowId } from "../../../lib/state";
 import { makeId } from "../../../lib/api-handlers";
+import { getSiteState, setSiteState, makeSiteId } from "../../../lib/site-state";
 
 export const dynamic = "force-dynamic";
 
@@ -26,28 +27,41 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const meta = session.metadata || {};
-    const showId: ShowId = meta.show === "hooks-harmony" ? "hooks-harmony" : "midnight-something-special";
-    const title = meta.title || "";
-    const artist = meta.artist || "";
-    const name = meta.name || "";
-    const message = meta.message || "";
-    const videoUrl = meta.videoUrl || "";
-    const tipCents = Number(meta.tipCents || 0);
 
-    if (title && artist) {
-      const state = await getState(showId);
-      state.queue = insertTippedRequest(state.queue, {
-        id: makeId(),
-        title,
-        artist,
-        name: name || undefined,
-        message: message || undefined,
-        videoUrl: videoUrl || undefined,
+    if (meta.kind === "monthly-supporter") {
+      const siteState = await getSiteState();
+      siteState.supporters.push({
+        id: makeSiteId(),
+        name: meta.name || undefined,
+        message: meta.message || undefined,
+        amountCents: Number(meta.amountCents || 0),
         ts: Date.now(),
-        tipped: true,
-        tipCents,
       });
-      await setState(showId, state);
+      await setSiteState(siteState);
+    } else {
+      const showId: ShowId = meta.show === "hooks-harmony" ? "hooks-harmony" : "midnight-something-special";
+      const title = meta.title || "";
+      const artist = meta.artist || "";
+      const name = meta.name || "";
+      const message = meta.message || "";
+      const videoUrl = meta.videoUrl || "";
+      const tipCents = Number(meta.tipCents || 0);
+
+      if (title && artist) {
+        const state = await getState(showId);
+        state.queue = insertTippedRequest(state.queue, {
+          id: makeId(),
+          title,
+          artist,
+          name: name || undefined,
+          message: message || undefined,
+          videoUrl: videoUrl || undefined,
+          ts: Date.now(),
+          tipped: true,
+          tipCents,
+        });
+        await setState(showId, state);
+      }
     }
   }
 
