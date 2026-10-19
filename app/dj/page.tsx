@@ -344,6 +344,8 @@ export default function DjPage() {
   const requestsOpen = state?.requestsOpen !== false;
   const freeLimit = state?.freeLimit === 1 ? 1 : 2;
   const firstPicksFirst = state?.firstPicksFirst === true;
+  const firstPickIndex = firstPicksFirst ? localQueue.findIndex((r) => r.tipped || !r.round || r.round < 2) : -1;
+  const nextIndex = firstPickIndex === -1 ? 0 : firstPickIndex;
   const rootStyle = { maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh", ...SHOW_THEME[show] };
 
   return (
@@ -667,7 +669,7 @@ export default function DjPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ color: "var(--ink-dim)" }}>☰</span>
-                        {i === 0 ? "▶ " : ""}
+                           {i === nextIndex ? "▶ " : ""}
                                                 {r.round ? (
                           <span
                             style={{
