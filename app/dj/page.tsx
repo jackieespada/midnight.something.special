@@ -93,6 +93,14 @@ export default function DjPage() {
     load();
   }
 
+    async function saveRequestSettings(next: { freeLimit?: number; firstPicksFirst?: boolean }) {
+    await fetch(`${apiPrefix}/request-settings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(next),
+    });
+    load();
+  }
   async function saveNowPlaying() {
     await fetch(`${apiPrefix}/now-playing`, {
       method: "POST",
@@ -334,6 +342,8 @@ export default function DjPage() {
 
   const queueCount = state?.queue?.length || 0;
   const requestsOpen = state?.requestsOpen !== false;
+  const freeLimit = state?.freeLimit === 1 ? 1 : 2;
+  const firstPicksFirst = state?.firstPicksFirst === true;
   const rootStyle = { maxWidth: 520, margin: "0 auto", padding: "24px 16px 48px", background: "var(--stage)", minHeight: "100vh", ...SHOW_THEME[show] };
 
   return (
@@ -394,6 +404,57 @@ export default function DjPage() {
         </p>
       </div>
 
+            <div style={cardStyle}>
+        <div style={labelStyle}>Free requests per person</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {[1, 2].map((n) => (
+            <button
+              key={n}
+              onClick={() => saveRequestSettings({ freeLimit: n })}
+              style={{
+                flex: 1,
+                padding: "10px 0",
+                borderRadius: 999,
+                border: freeLimit === n ? "none" : "1px solid var(--wire)",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: freeLimit === n ? "var(--gold)" : "transparent",
+                color: freeLimit === n ? "#1a0f08" : "var(--ink)",
+              }}
+            >
+              {n} free request{n === 1 ? "" : "s"}
+            </button>
+          ))}
+        </div>
+        <div style={{ height: 1, background: "var(--wire)", margin: "16px 0" }} />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <div>
+            <div style={labelStyle}>First picks before second picks</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: firstPicksFirst ? "#39ff6a" : "var(--ink-dim)" }}>
+              {firstPicksFirst ? "ON" : "OFF"}
+            </div>
+          </div>
+          <button
+            onClick={() => saveRequestSettings({ firstPicksFirst: !firstPicksFirst })}
+            style={{
+              padding: "10px 18px",
+              borderRadius: 999,
+              border: "none",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+              background: firstPicksFirst ? "var(--wire)" : "var(--gold)",
+              color: firstPicksFirst ? "var(--ink)" : "#1a0f08",
+            }}
+          >
+            {firstPicksFirst ? "Turn off" : "Turn on"}
+          </button>
+        </div>
+        <p style={{ color: "var(--ink-dim)", fontSize: 12, marginTop: 8, marginBottom: 0 }}>
+          When on, "Pull next request" plays everyone's first pick before any second pick. Your queue order is never rearranged.
+        </p>
+      </div>
       <div style={cardStyle}>
         <div style={labelStyle}>Tonight's theme (shown on the request page)</div>
         <input
@@ -607,6 +668,20 @@ export default function DjPage() {
                       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ color: "var(--ink-dim)" }}>☰</span>
                         {i === 0 ? "▶ " : ""}
+                                                {r.round ? (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: "1px 6px",
+                              borderRadius: 999,
+                              border: "1px solid var(--wire)",
+                              color: r.round >= 2 ? "var(--signal)" : "var(--ink-dim)",
+                            }}
+                          >
+                            {r.round >= 2 ? "2nd" : "1st"}
+                          </span>
+                        ) : null}
                         {r.tipped && (
                           <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)}</span>
                         )}
