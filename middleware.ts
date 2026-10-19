@@ -30,6 +30,12 @@ const PROTECTED_PATHS = [
   "/api/site/suggestions-admin",
   "/api/site/photo",
   "/api/site/supporters-admin",
+  "/api/request-settings",
+  "/api/hooks-harmony/request-settings",
+  "/api/requests-open",
+  "/api/queue-delete",
+  "/api/hooks-harmony/requests-open",
+  "/api/hooks-harmony/queue-delete",
 ];
 
 // Uses the Web Crypto API (available in both the Edge runtime middleware
