@@ -93,7 +93,7 @@ export default function DjPage() {
     load();
   }
 
-    async function saveRequestSettings(next: { freeLimit?: number; firstPicksFirst?: boolean }) {
+  async function saveRequestSettings(next: { freeLimit?: number; firstPicksFirst?: boolean }) {
     await fetch(`${apiPrefix}/request-settings`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -101,6 +101,7 @@ export default function DjPage() {
     });
     load();
   }
+
   async function saveNowPlaying() {
     await fetch(`${apiPrefix}/now-playing`, {
       method: "POST",
@@ -406,7 +407,7 @@ export default function DjPage() {
         </p>
       </div>
 
-            <div style={cardStyle}>
+      <div style={cardStyle}>
         <div style={labelStyle}>Free requests per person</div>
         <div style={{ display: "flex", gap: 8 }}>
           {[1, 2].map((n) => (
@@ -457,6 +458,7 @@ export default function DjPage() {
           When on, "Pull next request" plays everyone's first pick before any second pick. Your queue order is never rearranged.
         </p>
       </div>
+
       <div style={cardStyle}>
         <div style={labelStyle}>Tonight's theme (shown on the request page)</div>
         <input
@@ -538,38 +540,38 @@ export default function DjPage() {
           )}
 
           {state && state.pollHistory && state.pollHistory.length > 0 && (
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--wire)" }}>
-              <div style={{ fontSize: 11, color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 10 }}>
-                Past polls
-              </div>
-              {state.pollHistory.map((p, i) => {
-                const total = (Object.values(p.counts) as number[]).reduce((a: number, b: number) => a + b, 0);
-                const sorted = [...p.options].sort((a, b) => (p.counts[b] || 0) - (p.counts[a] || 0));
-                return (
-                  <div key={i} style={{ marginBottom: 14 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                      <span style={{ color: "var(--gold)" }}>"{p.question}"</span>
-                      <span style={{ color: "var(--ink-dim)" }}>{p.date}</span>
+            <details style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--wire)" }}>
+              <summary style={summaryStyle}>Past polls ({state.pollHistory.length})</summary>
+              <div style={{ marginTop: 12 }}>
+                {state.pollHistory.map((p, i) => {
+                  const total = (Object.values(p.counts) as number[]).reduce((a: number, b: number) => a + b, 0);
+                  const sorted = [...p.options].sort((a, b) => (p.counts[b] || 0) - (p.counts[a] || 0));
+                  return (
+                    <div key={i} style={{ marginBottom: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                        <span style={{ color: "var(--gold)" }}>"{p.question}"</span>
+                        <span style={{ color: "var(--ink-dim)" }}>{p.date}</span>
+                      </div>
+                      {sorted.map((opt, j) => {
+                        const c = p.counts[opt] || 0;
+                        const pct = total ? Math.round((c / total) * 100) : 0;
+                        return (
+                          <div key={opt} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ink-dim)", padding: "2px 0" }}>
+                            <span>
+                              {j === 0 && total > 0 ? "🏆 " : ""}
+                              {opt}
+                            </span>
+                            <span>
+                              {c} vote{c === 1 ? "" : "s"} ({pct}%)
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
-                    {sorted.map((opt, j) => {
-                      const c = p.counts[opt] || 0;
-                      const pct = total ? Math.round((c / total) * 100) : 0;
-                      return (
-                        <div key={opt} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--ink-dim)", padding: "2px 0" }}>
-                          <span>
-                            {j === 0 && total > 0 ? "🏆 " : ""}
-                            {opt}
-                          </span>
-                          <span>
-                            {c} vote{c === 1 ? "" : "s"} ({pct}%)
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </details>
           )}
         </div>
       )}
@@ -669,8 +671,8 @@ export default function DjPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <span style={{ color: "var(--ink-dim)" }}>☰</span>
-                           {i === nextIndex ? "▶ " : ""}
-                                                {r.round ? (
+                        {i === nextIndex ? "▶ " : ""}
+                        {r.round ? (
                           <span
                             style={{
                               fontSize: 10,
@@ -805,35 +807,39 @@ export default function DjPage() {
 
       {state && state.episodes.length > 0 && (
         <div style={cardStyle}>
-          <div style={labelStyle}>Past episodes</div>
-          {state.episodes.map((ep, i) => (
-            <div key={i} style={{ marginBottom: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                <span style={{ fontSize: 13, color: "var(--gold)" }}>{ep.date}</span>
-                <button
-                  style={{
-                    background: "transparent",
-                    border: "1px solid var(--gold)",
-                    color: "var(--gold)",
-                    borderRadius: 8,
-                    padding: "3px 8px",
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
-                  onClick={() => downloadSetlistPdf(ep.date, ep.songs)}
-                >
-                  ⬇ PDF
-                </button>
-              </div>
-              <ol style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: "var(--ink-dim)" }}>
-                {ep.songs.map((s, j) => (
-                  <li key={j}>
-                    {s.title} — {s.artist}
-                  </li>
-                ))}
-              </ol>
+          <details>
+            <summary style={summaryStyle}>Past setlists ({state.episodes.length})</summary>
+            <div style={{ marginTop: 12 }}>
+              {state.episodes.map((ep, i) => (
+                <details key={i} style={{ marginBottom: 10 }}>
+                  <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--gold)" }}>
+                    {ep.date} ({ep.songs.length} songs)
+                  </summary>
+                  <ol style={{ margin: "8px 0", paddingLeft: 20, fontSize: 13, color: "var(--ink-dim)" }}>
+                    {ep.songs.map((s, j) => (
+                      <li key={j}>
+                        {s.title} — {s.artist}
+                      </li>
+                    ))}
+                  </ol>
+                  <button
+                    style={{
+                      background: "transparent",
+                      border: "1px solid var(--gold)",
+                      color: "var(--gold)",
+                      borderRadius: 8,
+                      padding: "3px 8px",
+                      fontSize: 11,
+                      cursor: "pointer",
+                    }}
+                    onClick={() => downloadSetlistPdf(ep.date, ep.songs)}
+                  >
+                    ⬇ PDF
+                  </button>
+                </details>
+              ))}
             </div>
-          ))}
+          </details>
         </div>
       )}
     </div>
@@ -846,6 +852,15 @@ const cardStyle: React.CSSProperties = {
   borderRadius: 22,
   padding: 18,
   marginBottom: 14,
+};
+
+const summaryStyle: React.CSSProperties = {
+  cursor: "pointer",
+  fontSize: 12,
+  color: "var(--gold)",
+  textTransform: "uppercase",
+  letterSpacing: ".08em",
+  fontWeight: 700,
 };
 
 const labelStyle: React.CSSProperties = {
