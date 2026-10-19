@@ -11,7 +11,7 @@ const SHOW_LABELS: Record<ShowId, string> = {
 };
 
 const SHOW_SCHEDULE: Record<ShowId, string> = {
-  "midnight-something-special": "Thursdays 12:30AM ET",
+  "midnight-something-special": "Fridays 12:30AM ET (Thursdays 9:30PM PT)",
   "hooks-harmony": "Saturdays 3PM ET",
 };
 
@@ -47,6 +47,7 @@ export default function RequestPage() {
   const [poll, setPoll] = useState<Poll | null>(null);
   const [voting, setVoting] = useState(false);
   const [requestsOpen, setRequestsOpen] = useState(true);
+  const [freeLimit, setFreeLimit] = useState(2);
   const [showToast, setShowToast] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [tipStatus, setTipStatus] = useState<"tipped" | "cancelled" | null>(null);
@@ -70,6 +71,7 @@ export default function RequestPage() {
     setEpisodeTheme(data.theme || "");
     setPoll(data.poll || null);
     setRequestsOpen(data.requestsOpen !== false);
+    setFreeLimit(data.freeLimit === 1 ? 1 : 2);
   }
 
   useEffect(() => {
@@ -297,7 +299,7 @@ export default function RequestPage() {
       )}
 
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22, lineHeight: 1.5 }}>
-        Type a song and artist. It drops into the queue and shows up on stream. Limit 2 free requests per person — tip to add more or bump ahead of the line.
+        Type a song and artist. It drops into the queue and shows up on stream. Limit {freeLimit} free request{freeLimit === 1 ? "" : "s"} per person — tip to add more or bump ahead of the line.
       </p>
 
       {tipStatus === "tipped" && (
