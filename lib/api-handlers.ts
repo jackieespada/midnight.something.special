@@ -43,15 +43,21 @@ export function requestHandler(showId: ShowId) {
       );
     }
 
+    const freeLimit = state.freeLimit === 1 ? 1 : MAX_PER_PERSON;
+    let round: number | undefined = undefined;
+
     if (visitorId) {
       const count = state.submitterCounts[visitorId] || 0;
-      if (count >= MAX_PER_PERSON) {
+      if (count >= freeLimit) {
         return NextResponse.json(
-          { error: `You've already submitted ${MAX_PER_PERSON} requests tonight — tip to add more!` },
+          {
+            error: `You've already submitted ${freeLimit} free request${freeLimit === 1 ? "" : "s"} tonight — tip to add more!`,
+          },
           { status: 400 }
         );
       }
       state.submitterCounts[visitorId] = count + 1;
+      round = count + 1; // 1 = their first pick, 2 = their second pick
     }
 
     state.queue.push({
@@ -62,6 +68,7 @@ export function requestHandler(showId: ShowId) {
       message: message || undefined,
       videoUrl: videoUrl || undefined,
       ts: Date.now(),
+      round,
     });
     await setState(showId, state);
 
@@ -106,7 +113,18 @@ export function manualAddHandler(showId: ShowId) {
 export function advanceHandler(showId: ShowId) {
   return async function POST() {
     const state = await getState(showId);
-    const next = state.queue.shift();
+
+    // Normally we take whoever is at the top of the queue. When "first picks
+    // first" is on, we take the first request that is NOT a second pick (tipped
+    // requests and older untagged requests count as fine), and only fall back
+    // to a second pick once there are no first picks left. The queue itself is
+    // never reordered, so drag-and-drop order is untouched.
+    let pullIndex = 0;
+    if (state.firstPicksFirst) {
+      const firstPickIndex = state.queue.findIndex((r) => r.tipped || !r.round || r.round < 2);
+      if (firstPickIndex !== -1) pullIndex = firstPickIndex;
+    }
+    const next = state.queue.splice(pullIndex, 1)[0];
 
     if (!next) {
       return NextResponse.json({ error: "queue is empty" }, { status: 400 });
@@ -304,6 +322,27 @@ export function requestsOpenHandler(showId: ShowId) {
 
     const state = await getState(showId);
     state.requestsOpen = open;
+    await setState(showId, state);
+
+    return NextResponse.json({ ok: true, state });
+  };
+}
+
+// DJ settings for how free requests work tonight: how many free requests each
+// person gets (1 or 2), and whether "Pull next" plays first picks before
+// second picks. Both are per show and survive "Start new episode".
+export function requestSettingsHandler(showId: ShowId) {
+  return async function POST(req: Request) {
+    const body = await req.json();
+    const state = await getState(showId);
+
+    if (body.freeLimit !== undefined) {
+      state.freeLimit = Number(body.freeLimit) >= 2 ? 2 : 1;
+    }
+    if (body.firstPicksFirst !== undefined) {
+      state.firstPicksFirst = Boolean(body.firstPicksFirst);
+    }
+
     await setState(showId, state);
 
     return NextResponse.json({ ok: true, state });
