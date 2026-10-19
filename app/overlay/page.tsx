@@ -36,7 +36,9 @@ export default function OverlayPage() {
     return () => clearInterval(id);
   }, []);
 
-  const upNext = state?.queue?.[0] || null;
+  const queueList = state?.queue || [];
+  const firstPickIndex = state?.firstPicksFirst ? queueList.findIndex((r) => r.tipped || !r.round || r.round < 2) : -1;
+  const upNext = queueList[firstPickIndex === -1 ? 0 : firstPickIndex] || null;
   const queueCount = state?.queue?.length ?? 0;
   const isOpen = state?.requestsOpen !== false && queueCount < MAX_QUEUE;
 
