@@ -2,7 +2,7 @@ export type ShowId = "midnight-something-special" | "hooks-harmony";
 
 export type Song = { title: string; artist: string };
 export type NowPlaying = Song & { name?: string; message?: string; videoUrl?: string };
-export type Request = Song & { id: string; name?: string; message?: string; videoUrl?: string; ts: number; tipped?: boolean; tipCents?: number };
+export type Request = Song & { id: string; name?: string; message?: string; videoUrl?: string; ts: number; tipped?: boolean; tipCents?: number; round?: number };
 export type PlayedSong = Song & { name?: string; message?: string; videoUrl?: string; ts: number };
 export type Episode = { date: string; songs: PlayedSong[] };
 
@@ -30,6 +30,8 @@ export type ShowState = {
   poll?: Poll;
   pollHistory?: PollResult[];
   requestsOpen?: boolean;
+  freeLimit?: number; // free requests allowed per person per night (1 or 2)
+  firstPicksFirst?: boolean; // when true, "Pull next" plays first picks before second picks
 };
 
 export const MAX_QUEUE = 20;
@@ -104,6 +106,8 @@ export async function getState(showId: ShowId): Promise<ShowState> {
         if (parsed.theme === undefined) parsed.theme = "";
         if (!parsed.pollHistory) parsed.pollHistory = [];
         if (parsed.requestsOpen === undefined) parsed.requestsOpen = true;
+        if (parsed.freeLimit === undefined) parsed.freeLimit = MAX_PER_PERSON;
+        if (parsed.firstPicksFirst === undefined) parsed.firstPicksFirst = false;
         return parsed;
       }
     } catch {
