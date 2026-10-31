@@ -43,6 +43,7 @@ export default function RequestPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [tipAmount, setTipAmount] = useState("");
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
+  const [played, setPlayed] = useState<{ title: string; artist: string; name?: string }[]>([]);
   const [theme, setEpisodeTheme] = useState("");
   const [poll, setPoll] = useState<Poll | null>(null);
   const [voting, setVoting] = useState(false);
@@ -68,6 +69,7 @@ export default function RequestPage() {
     const res = await fetch(`${apiPrefix}/state`);
     const data = await res.json();
     setQueue(data.queue || []);
+    setPlayed(data.history || []);
     setEpisodeTheme(data.theme || "");
     setPoll(data.poll || null);
     setRequestsOpen(data.requestsOpen !== false);
@@ -381,6 +383,23 @@ export default function RequestPage() {
                   {r.title} — {r.artist}
                 </span>
                 <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div style={cardStyle}>
+        <div style={{ fontSize: 10.5, color: "var(--ink-dim)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>
+          Already played tonight ({played.length})
+        </div>
+        {played.length === 0 ? (
+          <div style={{ color: "var(--ink-dim)", fontSize: 13, padding: "8px 0" }}>Nothing played yet.</div>
+        ) : (
+          <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {[...played].reverse().map((s, i) => (
+              <li key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--wire)", fontSize: 14, opacity: 0.75 }}>
+                <span>✓ {s.title} — {s.artist}</span>
+                <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{s.name || "anon"}</span>
               </li>
             ))}
           </ul>
