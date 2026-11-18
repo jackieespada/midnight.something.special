@@ -29,6 +29,8 @@ const PROTECTED_PATHS = [
   "/api/site/affiliates",
   "/api/site/suggestions-admin",
   "/api/site/photo",
+  "/api/announcement",
+  "/api/hooks-harmony/announcement",
   "/api/site/supporters-admin",
   "/api/request-settings",
   "/api/hooks-harmony/request-settings",
