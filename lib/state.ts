@@ -32,6 +32,7 @@ export type ShowState = {
   requestsOpen?: boolean;
   freeLimit?: number; // free requests allowed per person per night (1 or 2)
   firstPicksFirst?: boolean; // when true, "Pull next" plays first picks before second picks
+  announcement?: string;
 };
 
 export const MAX_QUEUE = 20;
