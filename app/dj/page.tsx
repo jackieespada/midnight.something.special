@@ -79,6 +79,7 @@ export default function DjPage() {
 
   function switchShow(next: ShowId) {
     setShow(next);
+    setAnnounceInput("");
     const url = new URL(window.location.href);
     url.searchParams.set("show", next);
     window.history.replaceState({}, "", url.toString());
