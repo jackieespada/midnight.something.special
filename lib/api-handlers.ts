@@ -469,8 +469,15 @@ export function tipCheckoutHandler(showId: ShowId) {
       cancel_url: `${origin}${requestPath}?cancelled=1`,
 
     export function announcementHandler(showId: ShowId) {
-        return async function POST(req: Request) {
-          const body = await req.
+  return async function POST(req: Request) {
+    const body = await req.json();
+    const state = await getState(showId);
+    const text = String(body.text || "").trim().slice(0, 500);
+    state.announcement = text || undefined;
+    await setState(showId, state);
+    return NextResponse.json({ ok: true, state });
+  };
+}
     });
 
     return NextResponse.json({ url: session.url });
