@@ -349,6 +349,18 @@ export function requestSettingsHandler(showId: ShowId) {
   };
 }
 
+// Jackie's message to visitors, shown at the top of the request page.
+export function announcementHandler(showId: ShowId) {
+  return async function POST(req: Request) {
+    const body = await req.json();
+    const state = await getState(showId);
+    const text = String(body.text || "").trim().slice(0, 500);
+    state.announcement = text || undefined;
+    await setState(showId, state);
+    return NextResponse.json({ ok: true, state });
+  };
+}
+
 function tallyPoll(poll: { question: string; options: string[]; votes: Record<string, string> }): PollResult {
   const counts: Record<string, number> = {};
   for (const opt of poll.options) counts[opt] = 0;
@@ -467,17 +479,6 @@ export function tipCheckoutHandler(showId: ShowId) {
       metadata: { show: showId, title, artist, name, message, videoUrl, tipCents: String(amountCents) },
       success_url: `${origin}${requestPath}?tipped=1`,
       cancel_url: `${origin}${requestPath}?cancelled=1`,
-
-    export function announcementHandler(showId: ShowId) {
-  return async function POST(req: Request) {
-    const body = await req.json();
-    const state = await getState(showId);
-    const text = String(body.text || "").trim().slice(0, 500);
-    state.announcement = text || undefined;
-    await setState(showId, state);
-    return NextResponse.json({ ok: true, state });
-  };
-}
     });
 
     return NextResponse.json({ url: session.url });
