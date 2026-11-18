@@ -467,6 +467,10 @@ export function tipCheckoutHandler(showId: ShowId) {
       metadata: { show: showId, title, artist, name, message, videoUrl, tipCents: String(amountCents) },
       success_url: `${origin}${requestPath}?tipped=1`,
       cancel_url: `${origin}${requestPath}?cancelled=1`,
+
+    export function announcementHandler(showId: ShowId) {
+        return async function POST(req: Request) {
+          const body = await req.
     });
 
     return NextResponse.json({ url: session.url });
