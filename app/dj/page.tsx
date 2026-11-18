@@ -25,6 +25,7 @@ export default function DjPage() {
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [themeInput, setThemeInput] = useState("");
+  const [announceInput, setAnnounceInput] = useState("");
 
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", "", "", ""]);
@@ -110,6 +111,15 @@ export default function DjPage() {
     });
     setTitle("");
     setArtist("");
+    load();
+  }
+
+  async function saveAnnouncement(text: string) {
+    await fetch(`${apiPrefix}/announcement`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
     load();
   }
 
@@ -459,6 +469,40 @@ export default function DjPage() {
         </p>
       </div>
 
+      <div style={cardStyle}>
+        <div style={labelStyle}>Message to visitors (shown at the top of the request page)</div>
+        <textarea
+          style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
+          value={announceInput}
+          onChange={(e) => setAnnounceInput(e.target.value.slice(0, 500))}
+          placeholder="e.g. Doors open at 12:15! Tonight's theme is 80s ballads."
+        />
+        <div style={{ color: "var(--ink-dim)", fontSize: 12, marginTop: 6 }}>{announceInput.length}/500</div>
+        <button
+          style={ghostBtnStyle}
+          onClick={async () => {
+            await saveAnnouncement(announceInput);
+          }}
+        >
+          Post message
+        </button>
+        {state?.announcement && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 12, color: "var(--gold)", marginBottom: 4 }}>Currently live:</div>
+            <div style={{ fontSize: 14, whiteSpace: "pre-wrap" }}>{state.announcement}</div>
+            <button
+              style={{ ...ghostBtnStyle, marginTop: 8, borderColor: "var(--signal)", color: "var(--signal)" }}
+              onClick={async () => {
+                await saveAnnouncement("");
+                setAnnounceInput("");
+              }}
+            >
+              Clear message
+            </button>
+          </div>
+        )}
+      </div>
+      
       <div style={cardStyle}>
         <div style={labelStyle}>Tonight's theme (shown on the request page)</div>
         <input
