@@ -243,7 +243,7 @@ export default function RequestPage() {
             fontSize: 14,
           }}
         >
-          🔴 Free requests are closed for tonight — the lineup's locked in! You can still tip below to add your song.
+          🔴 Free requests are closed for now. Tip below if you want to add your song!
         </div>
       )}
 
