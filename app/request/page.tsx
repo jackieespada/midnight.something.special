@@ -45,6 +45,7 @@ export default function RequestPage() {
   const [queue, setQueue] = useState<QueuedRequest[]>([]);
   const [played, setPlayed] = useState<{ title: string; artist: string; name?: string }[]>([]);
   const [theme, setEpisodeTheme] = useState("");
+  const [announcement, setAnnouncement] = useState("");
   const [poll, setPoll] = useState<Poll | null>(null);
   const [voting, setVoting] = useState(false);
   const [requestsOpen, setRequestsOpen] = useState(true);
@@ -71,6 +72,7 @@ export default function RequestPage() {
     setQueue(data.queue || []);
     setPlayed(data.history || []);
     setEpisodeTheme(data.theme || "");
+    setAnnouncement(data.announcement || "");
     setPoll(data.poll || null);
     setRequestsOpen(data.requestsOpen !== false);
     setFreeLimit(data.freeLimit === 1 ? 1 : 2);
@@ -300,6 +302,15 @@ export default function RequestPage() {
         </div>
       )}
 
+            {announcement && (
+        <div style={{ ...cardStyle, borderColor: "var(--gold)" }}>
+          <div style={{ fontSize: 10.5, color: "var(--gold)", textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>
+            Message from Jackie
+          </div>
+          <div style={{ fontSize: 14.5, lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{announcement}</div>
+        </div>
+      )}
+      
       <p style={{ color: "var(--ink-dim)", fontSize: 13.5, marginBottom: 22, lineHeight: 1.5 }}>
         Type a song and artist. It drops into the queue and shows up on stream. Limit {freeLimit} free request{freeLimit === 1 ? "" : "s"} per person — tip to add more or bump ahead of the line.
       </p>
