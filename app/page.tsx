@@ -330,7 +330,7 @@ export default function LandingPage() {
                   <div style={{ fontWeight: 700, fontSize: 14 }}>
                     {s.name || "Anonymous"}{" "}
                     <span style={{ color: "#4dd9e8", fontWeight: 600 }}>
-                      · ${(s.amountCents / 100).toFixed(0)}/mo
+                      · {s.tier === "vip" ? "VIP · " : s.tier === "producer" ? "Producer · " : ""}${(s.amountCents / 100).toFixed(0)}/mo
                     </span>
                   </div>
                   {s.message && (
