@@ -25,6 +25,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const name = (body.name || "").toString().slice(0, 60);
   const message = (body.message || "").toString().slice(0, 300);
+  const themeIdea = (body.themeIdea || "").toString().slice(0, 300);
   const tierKey = (body.tier || "").toString().trim().toLowerCase();
 
   let amountCents = 0;
@@ -65,6 +66,7 @@ export async function POST(req: Request) {
       ],
       metadata: {
         kind: "monthly-supporter",
+        themeIdea: tierKey === "producer" ? themeIdea : "",
         tier,
         name,
         message,
