@@ -148,6 +148,7 @@ export function advanceHandler(showId: ShowId) {
       name: next.name,
       message: next.message,
       videoUrl: next.videoUrl,
+          vip: next.vip,
     };
     await setState(showId, state);
 
