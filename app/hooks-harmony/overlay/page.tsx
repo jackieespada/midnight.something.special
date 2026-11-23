@@ -87,6 +87,7 @@ export default function HooksHarmonyOverlayPage() {
               ))}
             </span>
           </div>
+                    {state?.nowPlaying?.vip && <div style={vipBadgeStyle}>★ VIP REQUEST</div>}
           <div style={{ fontWeight: 700, fontSize: 30, lineHeight: 1.15, color: "#fff" }}>{state?.nowPlaying?.title || "—"}</div>
           <div style={{ color: "#a8dbe2", fontSize: 20, marginTop: 6 }}>{state?.nowPlaying?.artist || ""}</div>
           {state?.nowPlaying?.name && (
@@ -107,6 +108,7 @@ export default function HooksHarmonyOverlayPage() {
           </div>
           <div style={{ ...miniPillStyle, marginTop: 12 }}>
             <div style={miniTagStyle}>Up next</div>
+                        {upNext?.vip && <div style={{ ...vipBadgeStyle, fontSize: 12, marginTop: 4, marginBottom: 2 }}>★ VIP</div>}
             <div style={miniTitleStyle}>{upNext?.title || "—"}</div>
             <div style={miniArtistStyle}>{upNext?.artist || ""}</div>
           </div>
@@ -205,6 +207,17 @@ const tagStyle: React.CSSProperties = {
   fontWeight: 700,
 };
 
+const vipBadgeStyle: React.CSSProperties = {
+  display: "inline-block",
+  fontSize: 14,
+  fontWeight: 800,
+  letterSpacing: ".12em",
+  color: "#0a0a0a",
+  background: "var(--gold)",
+  borderRadius: 999,
+  padding: "3px 12px",
+  marginBottom: 8,
+};
 const miniPillStyle: React.CSSProperties = {
   background: "rgba(0,0,0,.3)",
   border: "1px solid rgba(0,195,218,.3)",
