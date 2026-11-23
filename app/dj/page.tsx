@@ -734,6 +734,7 @@ export default function DjPage() {
                         {r.tipped && (
                           <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)}</span>
                         )}
+                                      {r.tipped && (r.tipCents || 0) >= 2000 ? <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 999, background: "var(--gold)", color: "#1a0f08" }}>SHOUTOUT</span> : null}
                         {r.title} — {r.artist}
                       </span>
                       <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
