@@ -94,6 +94,23 @@ export default function RequestPage() {
       window.alert("Something went wrong starting checkout.");
     }
   }
+    async function joinVip(tier: string) {
+    try {
+      const res = await fetch("/api/site/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier, name, returnTo: show === "hooks-harmony" ? "/hooks-harmony/request" : "/request" }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        window.alert(data.error || "Couldn't start checkout. Try again in a moment.");
+      }
+    } catch {
+      window.alert("Couldn't start checkout. Try again in a moment.");
+    }
+  }
   async function submitVip() {
     setVipMsg("");
     setVipOk(false);
@@ -382,6 +399,12 @@ export default function RequestPage() {
       {tipStatus === "tipped" && (
         <div style={{ ...cardStyle, borderColor: "var(--gold)", color: "var(--gold)", fontSize: 14 }}>
           Thanks for the tip — your song just jumped the line.
+        <div style={{ color: "var(--ink)", fontSize: 13, marginTop: 10 }}>
+            Tipping a lot? VIP is $15 a month for 3 priority requests plus a VIP badge on screen.
+          </div>
+          <button style={{ ...ghostBtnStyle, marginTop: 10 }} onClick={() => joinVip("vip")}>
+            Become a VIP
+          </button>
         </div>
       )}
       {tipStatus === "cancelled" && (
@@ -447,6 +470,18 @@ export default function RequestPage() {
         
         <div style={{ height: 1, background: "var(--wire)", margin: "20px 0" }} />
 
+        <div style={{ background: "rgba(232,161,60,.1)", border: "1px solid rgba(232,161,60,.35)", borderRadius: 14, padding: "12px 14px", marginBottom: 14 }}>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>Want to skip the line every month?</div>
+          <div style={{ color: "var(--ink-dim)", fontSize: 12.5, marginTop: 4, lineHeight: 1.5 }}>
+            VIP is $15 a month: 3 priority requests plus a VIP badge on screen. Producer is $30 and adds a theme night of your choosing.
+          </div>
+          <button style={{ ...ghostBtnStyle, marginTop: 10 }} onClick={() => joinVip("vip")}>
+            Become a VIP, $15/mo
+          </button>
+          <a href="/#supporter" style={{ display: "block", textAlign: "center", marginTop: 10, fontSize: 12, color: "var(--gold)" }}>
+            See all the tiers
+          </a>
+        </div>
         <label style={labelStyle}>VIP or Producer? Use a priority request</label>
           <div style={{ fontSize: 12, color: "var(--ink-dim)", marginBottom: 8, lineHeight: 1.5 }}>
           Fill in your song and artist at the top, then use this button instead of Submit request. It uses one of your 3 priority requests this month.
