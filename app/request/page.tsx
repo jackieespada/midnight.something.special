@@ -55,6 +55,10 @@ export default function RequestPage() {
   const [tipStatus, setTipStatus] = useState<"tipped" | "cancelled" | null>(null);
   const [tipLoading, setTipLoading] = useState(false);
   const [tipError, setTipError] = useState("");
+  const [vipEmail, setVipEmail] = useState("");
+  const [vipMsg, setVipMsg] = useState("");
+  const [vipOk, setVipOk] = useState(false);
+  const [vipBusy, setVipBusy] = useState(false);
 
   const apiPrefix = show === "hooks-harmony" ? "/api/hooks-harmony" : "/api";
 
@@ -89,6 +93,42 @@ export default function RequestPage() {
     } catch {
       window.alert("Something went wrong starting checkout.");
     }
+  }
+  async function submitVip() {
+    setVipMsg("");
+    setVipOk(false);
+    if (!song.trim() || !artist.trim()) {
+      setVipMsg("Fill in the song and artist first.");
+      return;
+    }
+    if (!vipEmail.trim()) {
+      setVipMsg("Enter the email you used to sign up.");
+      return;
+    }
+    setVipBusy(true);
+    try {
+      const res = await fetch("/api/vip/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ show, title: song, artist, name, message, videoUrl, email: vipEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setVipMsg(data.error || "Something went wrong.");
+      } else {
+        setVipOk(true);
+        setVipMsg(`Added! You have ${data.left} priority request${data.left === 1 ? "" : "s"} left this month.`);
+        setSong("");
+        setArtist("");
+        setName("");
+        setMessage("");
+        setVideoUrl("");
+        loadState();
+      }
+    } catch {
+      setVipMsg("Something went wrong.");
+    }
+    setVipBusy(false);
   }
   async function loadState() {
     const res = await fetch(`${apiPrefix}/state`);
@@ -401,6 +441,21 @@ export default function RequestPage() {
           {tipLoading ? "Starting checkout…" : "Tip and bump my song"}
         </button>
         {tipError && <div style={{ marginTop: 10, fontSize: 13, color: "var(--signal)" }}>{tipError}</div>}
+        
+        <div style={{ height: 1, background: "var(--wire)", margin: "20px 0" }} />
+
+        <label style={labelStyle}>VIP or Producer? Use a priority request</label>
+        <input
+          style={inputStyle}
+          value={vipEmail}
+          onChange={(e) => setVipEmail(e.target.value)}
+          placeholder="The email you used to sign up"
+          inputMode="email"
+        />
+        <button style={ghostBtnStyle} onClick={submitVip} disabled={vipBusy}>
+          {vipBusy ? "Checking…" : "Use a VIP priority request"}
+        </button>
+        {vipMsg && <div style={{ marginTop: 10, fontSize: 13, color: vipOk ? "var(--gold)" : "var(--signal)" }}>{vipMsg}</div>}
       </div>
 
       <div style={cardStyle}>
@@ -415,6 +470,7 @@ export default function RequestPage() {
               <li key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid var(--wire)", fontSize: 14 }}>
                 <span>
                   {r.tipped && <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)} </span>}
+                                    {r.vip && <span style={{ color: "var(--gold)", fontWeight: 700 }}>VIP </span>}
                   {r.title} — {r.artist}
                 </span>
                 <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"} <button onClick={() => topUp(r)} style={{ marginLeft: 8, background: "transparent", border: "1px solid var(--gold)", color: "var(--gold)", borderRadius: 8, padding: "2px 8px", fontSize: 11, cursor: "pointer" }}>+ boost</button></span>
