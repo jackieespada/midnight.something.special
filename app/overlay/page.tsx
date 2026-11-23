@@ -77,6 +77,7 @@ export default function OverlayPage() {
               ))}
             </span>
           </div>
+                    {state?.nowPlaying?.vip && <div style={vipBadgeStyle}>★ VIP REQUEST</div>}
           <div style={{ fontWeight: 700, fontSize: 30, lineHeight: 1.15, color: "#fff" }}>{state?.nowPlaying?.title || "—"}</div>
           <div style={{ color: "#e7c9a8", fontSize: 20, marginTop: 6 }}>{state?.nowPlaying?.artist || ""}</div>
           {state?.nowPlaying?.name && (
@@ -97,6 +98,7 @@ export default function OverlayPage() {
           </div>
           <div style={{ ...miniPillStyle, marginTop: 12 }}>
             <div style={miniTagStyle}>Up next</div>
+                        {upNext?.vip && <div style={{ ...vipBadgeStyle, fontSize: 12, marginTop: 4, marginBottom: 2 }}>★ VIP</div>}
             <div style={miniTitleStyle}>{upNext?.title || "—"}</div>
             <div style={miniArtistStyle}>{upNext?.artist || ""}</div>
           </div>
@@ -195,6 +197,17 @@ const tagStyle: React.CSSProperties = {
   fontWeight: 700,
 };
 
+const vipBadgeStyle: React.CSSProperties = {
+  display: "inline-block",
+  fontSize: 14,
+  fontWeight: 800,
+  letterSpacing: ".12em",
+  color: "#0a0a0a",
+  background: "var(--gold)",
+  borderRadius: 999,
+  padding: "3px 12px",
+  marginBottom: 8,
+};
 const miniPillStyle: React.CSSProperties = {
   background: "rgba(0,0,0,.3)",
   border: "1px solid rgba(232,161,60,.3)",
