@@ -35,6 +35,8 @@ export async function POST(req: Request) {
         name: meta.name || undefined,
         message: meta.message || undefined,
         amountCents: Number(meta.amountCents || 0),
+        tier: meta.tier || undefined,
+        themeIdea: meta.themeIdea || undefined,
         ts: Date.now(),
       });
       await setSiteState(siteState);
