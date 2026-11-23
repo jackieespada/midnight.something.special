@@ -20,6 +20,7 @@ export default function LandingPage() {
   const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [supAmount, setSupAmount] = useState("10");
   const [supTier, setSupTier] = useState("vip");
+  const [supTheme, setSupTheme] = useState("");
   const [supName, setSupName] = useState("");
   const [supMessage, setSupMessage] = useState("");
   const [supStatus, setSupStatus] = useState<"idle" | "sending" | "error">("idle");
@@ -75,7 +76,7 @@ export default function LandingPage() {
       const res = await fetch("/api/site/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier: supTier, name: supName, message: supMessage }),
+        body: JSON.stringify({ tier: supTier, name: supName, message: supMessage, themeIdea: supTier === "producer" ? supTheme : "" }),
       });
       const data = await res.json();
       if (data.url) {
@@ -246,7 +247,7 @@ export default function LandingPage() {
               {[
                 { key: "supporter", name: "Supporter", price: "$5", perks: "Your name shouted out once a month." },
                 { key: "vip", name: "VIP", price: "$15", perks: "3 priority song requests a month, plus a VIP badge on screen." },
-                { key: "producer", name: "Producer", price: "$30", perks: "All the VIP perks, plus a theme night or a song-of-the-month pick." },
+                { key: "producer", name: "Producer", price: "$30", perks: "All the VIP perks, plus a theme night of your choosing." },
               ].map((t) => (
                 <button
                   key={t.key}
@@ -273,6 +274,14 @@ export default function LandingPage() {
                 </button>
               ))}
             </div>
+                        {supTier === "producer" && (
+              <input
+                value={supTheme}
+                onChange={(e) => setSupTheme(e.target.value)}
+                placeholder="Your theme night idea (I'll follow up to schedule it)"
+                style={styles.input}
+              />
+            )}
             <div style={{ display: "none", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 20, fontWeight: 700 }}>$</span>
               <input
