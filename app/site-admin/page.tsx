@@ -359,8 +359,11 @@ function SupportersList({
       {supporters.map((s) => (
         <div key={s.id} style={{ ...styles.row, flexDirection: "column", alignItems: "flex-start" }}>
           <div style={{ fontSize: 14, fontWeight: 700 }}>
-            {s.name || "Anonymous"} — ${(s.amountCents / 100).toFixed(2)}/mo
+            {s.name || "Anonymous"}{s.tier ? ` [${s.tier.toUpperCase()}]` : ""} — ${(s.amountCents / 100).toFixed(2)}/mo
           </div>
+            {s.themeIdea && (
+            <div style={{ fontSize: 13, color: "#e8a13c", marginTop: 4 }}>Theme night idea: {s.themeIdea}</div>
+          )}
           {s.message && (
             <div style={{ fontSize: 13, color: "#fbeedd", marginTop: 4 }}>{s.message}</div>
           )}
