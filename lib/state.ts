@@ -71,7 +71,7 @@ function defaultStateFor(showId: ShowId): ShowState {
 // requests that were tipped earlier (first tipped, first served). Tipped
 // requests are always allowed in, even if the queue is otherwise "full."
 export function insertTippedRequest(queue: Request[], req: Request): Request[] {
-  const firstNonTippedIndex = queue.findIndex((r) => !r.tipped || ((r.tipCents || 0) > 0 && (r.tipCents || 0) < (req.tipCents || 0)));
+  const firstNonTippedIndex = queue.findIndex((r) => !r.tipped || ((r.tipCents || 0) < (req.tipCents || 0) && ((r.tipCents || 0) > 0 || (req.tipCents || 0) >= 2000)));
   if (firstNonTippedIndex === -1) {
     return [...queue, req];
   }
