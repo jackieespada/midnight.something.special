@@ -66,6 +66,30 @@ export default function RequestPage() {
     if (params.get("cancelled")) setTipStatus("cancelled");
   }, []);
 
+    async function topUp(r: QueuedRequest) {
+    const input = window.prompt(`Add to the tip on "${r.title}" to climb the queue. How much? (minimum $1)`, "5");
+    if (!input) return;
+    const amount = Number(input.replace(/[^0-9.]/g, ""));
+    if (!amount || amount < 1) {
+      window.alert("Enter an amount of at least $1.");
+      return;
+    }
+    try {
+      const res = await fetch(`${apiPrefix}/tip-checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: r.title, artist: r.artist, name: r.name || "", amount, topUpId: r.id }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        window.alert(data.error || "Something went wrong starting checkout.");
+      }
+    } catch {
+      window.alert("Something went wrong starting checkout.");
+    }
+  }
   async function loadState() {
     const res = await fetch(`${apiPrefix}/state`);
     const data = await res.json();
@@ -365,7 +389,7 @@ export default function RequestPage() {
 
         <div style={{ height: 1, background: "var(--wire)", margin: "20px 0" }} />
 
-        <label style={labelStyle}>Tip to bump ahead of the line (optional)</label>
+        <label style={labelStyle}>Tip to bump ahead of the line (optional). The more you tip, the higher you climb, and $20+ plays next with a special shoutout!</label>
         <input
           style={inputStyle}
           value={tipAmount}
@@ -393,7 +417,7 @@ export default function RequestPage() {
                   {r.tipped && <span style={{ color: "var(--gold)" }}>★ ${((r.tipCents || 0) / 100).toFixed(2)} </span>}
                   {r.title} — {r.artist}
                 </span>
-                <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"}</span>
+                <span style={{ color: "var(--ink-dim)", fontSize: 12 }}>{r.name || "anon"} <button onClick={() => topUp(r)} style={{ marginLeft: 8, background: "transparent", border: "1px solid var(--gold)", color: "var(--gold)", borderRadius: 8, padding: "2px 8px", fontSize: 11, cursor: "pointer" }}>+ boost</button></span>
               </li>
             ))}
           </ul>
