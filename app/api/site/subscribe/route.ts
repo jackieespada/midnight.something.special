@@ -27,6 +27,8 @@ export async function POST(req: Request) {
   const message = (body.message || "").toString().slice(0, 300);
   const themeIdea = (body.themeIdea || "").toString().slice(0, 300);
   const tierKey = (body.tier || "").toString().trim().toLowerCase();
+  const returnTo = (body.returnTo || "").toString();
+  const returnPath = ["/request", "/hooks-harmony/request"].includes(returnTo) ? returnTo : "/";
 
   let amountCents = 0;
   let productName = "Monthly Supporter";
@@ -72,8 +74,8 @@ export async function POST(req: Request) {
         message,
         amountCents: String(amountCents),
       },
-      success_url: `${origin}/?supported=1`,
-      cancel_url: `${origin}/?supported=0`,
+      success_url: `${origin}${returnPath}?supported=1`,
+      cancel_url: `${origin}${returnPath}?supported=0`,
     });
 
     return NextResponse.json({ url: session.url });
