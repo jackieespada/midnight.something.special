@@ -46,20 +46,35 @@ export async function POST(req: Request) {
       const message = meta.message || "";
       const videoUrl = meta.videoUrl || "";
       const tipCents = Number(meta.tipCents || 0);
+      const topUpId = meta.topUpId || "";
 
       if (title && artist) {
         const state = await getState(showId);
-        state.queue = insertTippedRequest(state.queue, {
-          id: makeId(),
-          title,
-          artist,
-          name: name || undefined,
-          message: message || undefined,
-          videoUrl: videoUrl || undefined,
-          ts: Date.now(),
-          tipped: true,
-          tipCents,
-        });
+
+        // A top-up adds to a song that is already in the queue and moves it
+        // up to where its new total belongs. If that song has already been
+        // played (or removed) by the time the payment lands, it falls through
+        // and gets added as a fresh tipped request instead.
+        const existingIndex = topUpId ? state.queue.findIndex((r) => r.id === topUpId) : -1;
+
+        if (existingIndex !== -1) {
+          const existing = state.queue.splice(existingIndex, 1)[0];
+          existing.tipped = true;
+          existing.tipCents = (existing.tipCents || 0) + tipCents;
+          state.queue = insertTippedRequest(state.queue, existing);
+        } else {
+          state.queue = insertTippedRequest(state.queue, {
+            id: makeId(),
+            title,
+            artist,
+            name: name || undefined,
+            message: message || undefined,
+            videoUrl: videoUrl || undefined,
+            ts: Date.now(),
+            tipped: true,
+            tipCents,
+          });
+        }
         await setState(showId, state);
       }
     }
