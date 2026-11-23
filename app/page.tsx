@@ -237,7 +237,7 @@ export default function LandingPage() {
         </div>
 
         <div style={styles.section}>
-          <div style={styles.sectionTitle}>Become a Monthly Supporter</div>
+          <div id="supporter" style={styles.sectionTitle}>Become a Monthly Supporter</div>
           <div style={styles.suggestBox}>
             <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "#c9b8e0" }}>
               Pick a tier. You can cancel anytime from the email Stripe sends you.
