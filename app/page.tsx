@@ -19,6 +19,7 @@ export default function LandingPage() {
 
   const [supporters, setSupporters] = useState<Supporter[]>([]);
   const [supAmount, setSupAmount] = useState("10");
+  const [supTier, setSupTier] = useState("vip");
   const [supName, setSupName] = useState("");
   const [supMessage, setSupMessage] = useState("");
   const [supStatus, setSupStatus] = useState<"idle" | "sending" | "error">("idle");
@@ -74,7 +75,7 @@ export default function LandingPage() {
       const res = await fetch("/api/site/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, name: supName, message: supMessage }),
+        body: JSON.stringify({ tier: supTier, name: supName, message: supMessage }),
       });
       const data = await res.json();
       if (data.url) {
@@ -238,10 +239,41 @@ export default function LandingPage() {
           <div style={styles.sectionTitle}>Become a Monthly Supporter</div>
           <div style={styles.suggestBox}>
             <p style={{ margin: "0 0 14px", fontSize: 13.5, color: "#c9b8e0" }}>
-              Pick your own monthly amount. You can cancel anytime from the email Stripe sends you.
+              Pick a tier. You can cancel anytime from the email Stripe sends you.
               Your name and a short message can show up on the wall below (totally optional).
             </p>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+              {[
+                { key: "supporter", name: "Supporter", price: "$5", perks: "Your name shouted out once a month." },
+                { key: "vip", name: "VIP", price: "$15", perks: "3 priority song requests a month, plus a VIP badge on screen." },
+                { key: "producer", name: "Producer", price: "$30", perks: "All the VIP perks, plus a theme night or a song-of-the-month pick." },
+              ].map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setSupTier(t.key)}
+                  style={{
+                    textAlign: "left",
+                    background: supTier === t.key ? "rgba(255,63,164,.18)" : "rgba(0,0,0,.25)",
+                    border: supTier === t.key ? "2px solid #ff3fa4" : "1px solid rgba(255,255,255,.14)",
+                    borderRadius: 14,
+                    padding: "12px 14px",
+                    color: "#fdf6ff",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 15 }}>
+                    <span>
+                      {supTier === t.key ? "✓ " : ""}
+                      {t.name}
+                    </span>
+                    <span style={{ color: "#4dd9e8" }}>{t.price}/mo</span>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "#c9b8e0", marginTop: 4 }}>{t.perks}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "none", alignItems: "center", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 20, fontWeight: 700 }}>$</span>
               <input
                 type="number"
@@ -269,7 +301,7 @@ export default function LandingPage() {
             </button>
               {supStatus === "error" && (
               <div style={{ color: "#ff3fa4", marginTop: 8, fontSize: 12.5 }}>
-                Enter an amount of at least $1 and try again.
+                Something went wrong. Try again in a moment.
               </div>
             )}
             {links.find((l) => l.label.toLowerCase().includes("manage") || l.label.toLowerCase().includes("cancel")) && (
