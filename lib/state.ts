@@ -1,8 +1,8 @@
 export type ShowId = "midnight-something-special" | "hooks-harmony";
 
 export type Song = { title: string; artist: string };
-export type NowPlaying = Song & { name?: string; message?: string; videoUrl?: string };
-export type Request = Song & { id: string; name?: string; message?: string; videoUrl?: string; ts: number; tipped?: boolean; tipCents?: number; round?: number };
+export type NowPlaying = Song & { name?: string; message?: string; videoUrl?: string; vip?: boolean };
+export type Request = Song & { id: string; name?: string; message?: string; videoUrl?: string; ts: number; tipped?: boolean; tipCents?: number; round?: number; vip?: boolean };
 export type PlayedSong = Song & { name?: string; message?: string; videoUrl?: string; ts: number };
 export type Episode = { date: string; songs: PlayedSong[] };
 
@@ -78,6 +78,15 @@ export function insertTippedRequest(queue: Request[], req: Request): Request[] {
   return [...queue.slice(0, firstNonTippedIndex), req, ...queue.slice(firstNonTippedIndex)];
 }
 
+// Inserts a VIP priority request after all paid boosts and earlier VIP
+// requests, but ahead of every free request.
+export function insertVipRequest(queue: Request[], req: Request): Request[] {
+  const idx = queue.findIndex((r) => !r.tipped && !r.vip);
+  if (idx === -1) {
+    return [...queue, req];
+  }
+  return [...queue.slice(0, idx), req, ...queue.slice(idx)];
+}
 // Uses Netlify Blobs (Netlify's built-in key/value store — no separate
 // service to set up, it just works once this is deployed on Netlify).
 // Falls back to an in-memory object for local development, which resets
