@@ -426,6 +426,9 @@ export default function RequestPage() {
           </div>
         )}
         {submitError && <div style={{ marginTop: 12, fontSize: 13, color: "var(--signal)" }}>{submitError}</div>}
+         <div style={{ marginTop: 10, fontSize: 12, color: "var(--ink-dim)" }}>
+          VIP or Producer? Skip this button and use "Use a VIP priority request" further down instead.
+        </div>
 
         <div style={{ height: 1, background: "var(--wire)", margin: "20px 0" }} />
 
@@ -445,6 +448,9 @@ export default function RequestPage() {
         <div style={{ height: 1, background: "var(--wire)", margin: "20px 0" }} />
 
         <label style={labelStyle}>VIP or Producer? Use a priority request</label>
+          <div style={{ fontSize: 12, color: "var(--ink-dim)", marginBottom: 8, lineHeight: 1.5 }}>
+          Fill in your song and artist at the top, then use this button instead of Submit request. It uses one of your 3 priority requests this month.
+        </div>
         <input
           style={inputStyle}
           value={vipEmail}
