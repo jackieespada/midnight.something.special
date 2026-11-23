@@ -44,6 +44,8 @@ export type Supporter = {
   name?: string;
   message?: string;
   amountCents: number;
+  tier?: string;       // "supporter", "vip" or "producer" (older signups have none)
+  themeIdea?: string;  // Producer only: their theme night idea (admin only, never public)
   ts: number;
 };
 
