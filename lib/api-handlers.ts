@@ -452,6 +452,7 @@ export function tipCheckoutHandler(showId: ShowId) {
     const message = (body.message || "").toString().trim().slice(0, 200);
     const videoUrl = (body.videoUrl || "").toString().trim().slice(0, 500);
     const amount = Number(body.amount);
+    const topUpId = (body.topUpId || "").toString().trim();
 
     if (!title || !artist) {
       return NextResponse.json({ error: "title and artist are required" }, { status: 400 });
@@ -476,7 +477,7 @@ export function tipCheckoutHandler(showId: ShowId) {
           quantity: 1,
         },
       ],
-      metadata: { show: showId, title, artist, name, message, videoUrl, tipCents: String(amountCents) },
+      metadata: { show: showId, title, artist, name, message, videoUrl, tipCents: String(amountCents), topUpId },
       success_url: `${origin}${requestPath}?tipped=1`,
       cancel_url: `${origin}${requestPath}?cancelled=1`,
     });
