@@ -61,7 +61,7 @@ export function defaultSettings(): GiveawaySettings {
       "Cozy Bundle: Brave and Courageous candle + Loaded Gun Coffee",
     ],
     sponsorName: "Jovial Abundance Enterprise, LLC",
-    sponsorAddress: "",
+    sponsorAddress: "1240 Johnson Ferry Place, Suite A-50, Marietta, GA 30068",
     brands: "Prizes from my partners Pranamat, Revelation Candle, Brave and Courageous, and Loaded Gun Coffee.",
     words: [],
     winners: [],

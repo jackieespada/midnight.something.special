@@ -31,6 +31,7 @@ type Board = {
 };
 
 const SUBSTACK_URL = "https://jackieespada.substack.com";
+const TELEGRAM_URL = "https://t.me/JackieEspada";
 const MAX_WORDS = 5;
 const MAX_FRIENDS = 5;
 
@@ -53,7 +54,7 @@ function countdown(ms: number) {
 export default function GiveawayPage() {
   const [board, setBoard] = useState<Board | null>(null);
   const [now, setNow] = useState(Date.now());
-  const [telegramUrl, setTelegramUrl] = useState("");
+  const [telegramUrl, setTelegramUrl] = useState(TELEGRAM_URL);
 
   const [mode, setMode] = useState<"enter" | "check">("enter");
   const [name, setName] = useState("");
