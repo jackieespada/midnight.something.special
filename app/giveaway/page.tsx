@@ -315,7 +315,9 @@ export default function GiveawayPage() {
             </div>
 
             {mode === "enter" ? (
-              notYet ? (
+              !board ? (
+                <p style={S.muted}>Loading the North Pole... ❄</p>
+              ) : notYet ? (
                 <p style={S.muted}>Entries open December 1. Come back then and get in early! 🎄</p>
               ) : closed ? (
                 <p style={S.muted}>Entries are closed. Thanks for playing!</p>
