@@ -212,8 +212,8 @@ export default function GiveawayPage() {
           )}
           {board && (
             <div style={S.stats}>
-              <div><b>{board.entrantCount}</b><span>players</span></div>
-              <div><b>{board.totalEntries}</b><span>total entries</span></div>
+              <div><b style={{ fontSize: 22, color: "#fff", display: "block" }}>{board.entrantCount}</b><span>players</span></div>
+              <div><b style={{ fontSize: 22, color: "#fff", display: "block" }}>{board.totalEntries}</b><span>total entries</span></div>
             </div>
           )}
         </header>
