@@ -54,7 +54,7 @@ export function defaultSettings(): GiveawaySettings {
   return {
     title: "12 Days of Christmas with Jackie",
     opensAt: Date.parse("2026-12-01T05:00:00Z"),  // Dec 1, 12:00 AM ET
-    closesAt: Date.parse("2026-12-13T04:59:00Z"), // Dec 12, 11:59 PM ET
+    closesAt: Date.parse("2026-12-12T17:00:00Z"), // Dec 12, 12:00 PM ET (before the live draw)
     drawText: "December 12, live on The Midnight Something Special",
     prizes: [
       "Unwind Bundle: Pranamat travel hedgehog + a Revelation Candle",
