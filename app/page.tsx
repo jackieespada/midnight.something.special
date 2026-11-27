@@ -270,6 +270,25 @@ export default function LandingPage() {
           )}
         </div>
 
+        <a
+          href="/giveaway"
+          style={{
+            display: "block",
+            marginTop: 30,
+            padding: "16px 18px",
+            borderRadius: 18,
+            textDecoration: "none",
+            color: "#fff",
+            textAlign: "center",
+            background: "linear-gradient(135deg, rgba(255,63,164,.85), rgba(178,75,255,.85))",
+            boxShadow: "0 0 30px rgba(255,63,164,.3)",
+          }}
+        >
+          <div style={{ fontSize: 12, letterSpacing: ".18em", fontWeight: 700 }}>FREE HOLIDAY GIVEAWAY</div>
+          <div style={{ fontSize: 20, fontWeight: 800, marginTop: 4 }}>🎁 12 Days of Christmas with Jackie</div>
+          <div style={{ fontSize: 13, marginTop: 4, opacity: 0.9 }}>Enter, earn bonus entries, and climb the leaderboard →</div>
+        </a>
+
         <div style={styles.section}>
           <div id="supporter" style={styles.sectionTitle}>Become a Monthly Supporter</div>
           <div style={styles.suggestBox}>

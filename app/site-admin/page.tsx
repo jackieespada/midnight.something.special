@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { LinkItem, CalendarEntry, AffiliateItem, Suggestion, Supporter } from "@/lib/site-state";
 import { supporterIsFounding } from "@/lib/founding";
 
-type Tab = "profile" | "links" | "calendar" | "affiliates" | "suggestions" | "supporters";
+type Tab = "profile" | "links" | "calendar" | "affiliates" | "suggestions" | "supporters" | "giveaway";
 
 function newId() {
   return Math.random().toString(36).slice(2, 10);
@@ -130,7 +130,7 @@ export default function SiteAdminPage() {
         <p style={styles.sub}>Edit everything on jackieespada.com — changes save instantly.</p>
 
         <div style={styles.tabs}>
-          {(["profile", "links", "calendar", "affiliates", "suggestions", "supporters"] as Tab[]).map((t) => (
+          {(["profile", "links", "calendar", "affiliates", "suggestions", "supporters", "giveaway"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -142,6 +142,7 @@ export default function SiteAdminPage() {
               {t === "affiliates" && "Shop My Favorites"}
               {t === "suggestions" && `Suggestions${suggestions.filter((s) => !s.read).length ? ` (${suggestions.filter((s) => !s.read).length})` : ""}`}
               {t === "supporters" && `Supporters${supporters.length ? ` (${supporters.length})` : ""}`}
+              {t === "giveaway" && "Giveaway"}
             </button>
           ))}
         </div>
@@ -163,6 +164,7 @@ export default function SiteAdminPage() {
         {tab === "suggestions" && (
           <SuggestionsList suggestions={suggestions} onRead={markRead} onDelete={deleteSuggestion} />
         )}
+        {tab === "giveaway" && <GiveawayAdmin />}
         {tab === "supporters" && (
           <SupportersList supporters={supporters} onDelete={deleteSupporter} onEdit={editSupporter} />
         )}
@@ -437,6 +439,167 @@ function SupporterRow({
           <button style={styles.removeBtn} onClick={() => onDelete(s.id)}>Delete</button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------- Giveaway ----------
+type GSettings = {
+  title: string; opensAt: number; closesAt: number; drawText: string; prizes: string[];
+  sponsorName: string; sponsorAddress: string; brands: string;
+  words: { id: string; word: string; label: string; addedAt: number; active: boolean }[];
+  winners: { emailKey: string; nickname: string; name: string; email: string; prize: string; drawnAt: number }[];
+};
+type GEntrant = {
+  emailKey: string; email: string; name: string; nickname: string; refCode: string; substack: boolean; telegram: boolean;
+  wordsRedeemed: string[]; referrals: string[]; bonus: number; disqualified?: boolean; createdAt: number;
+  breakdown: { base: number; substack: number; telegram: number; words: number; referrals: number; bonus: number; total: number };
+};
+
+function toLocalInput(ms: number) {
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function GiveawayAdmin() {
+  const [settings, setSettings] = useState<GSettings | null>(null);
+  const [entrants, setEntrants] = useState<GEntrant[]>([]);
+  const [prizesText, setPrizesText] = useState("");
+  const [newWord, setNewWord] = useState("");
+  const [newLabel, setNewLabel] = useState("");
+  const [drawPrize, setDrawPrize] = useState("");
+  const [search, setSearch] = useState("");
+  const [note, setNote] = useState("");
+
+  async function load() {
+    const data = await fetch("/api/giveaway/admin", { cache: "no-store" }).then((r) => r.json());
+    if (data.settings) {
+      setSettings(data.settings);
+      setPrizesText((data.settings.prizes || []).join("\n"));
+      setDrawPrize((p) => p || data.settings.prizes?.[0] || "");
+    }
+    setEntrants(data.entrants || []);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function post(payload: Record<string, unknown>) {
+    const res = await fetch("/api/giveaway/admin", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.error) setNote(data.error);
+    return data;
+  }
+
+  if (!settings) return <p style={{ color: "#c2a488" }}>Loading giveaway...</p>;
+
+  const totalEntries = entrants.filter((e) => !e.disqualified).reduce((n, e) => n + e.breakdown.total, 0);
+  const shown = entrants.filter((e) =>
+    !search || `${e.name} ${e.nickname} ${e.email}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div>
+      {note && <div style={styles.flash}>{note}</div>}
+      {!settings.sponsorAddress && (
+        <div style={{ ...styles.flash, color: "#e88a8a" }}>
+          Add your business mailing address below. The official rules need it before entries open.
+        </div>
+      )}
+      <p style={{ color: "#c2a488", fontSize: 13 }}>
+        {entrants.length} players · {totalEntries} entries · public page at <a href="/giveaway" style={{ color: "#e8a13c" }}>/giveaway</a>
+      </p>
+
+      <h3 style={{ color: "#e8a13c", fontSize: 15 }}>🔑 Secret words</h3>
+      <p style={{ color: "#c2a488", fontSize: 12.5 }}>Add tonight's word right before you say it on air. Turn old words off so they stop working.</p>
+      <div style={styles.row}>
+        <input style={styles.input} placeholder="Secret word" value={newWord} onChange={(e) => setNewWord(e.target.value)} />
+        <input style={styles.input} placeholder="Label (e.g. Dec 3 Midnight)" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+        <button style={styles.saveBtn} onClick={async () => {
+          const d = await post({ action: "addWord", word: newWord, label: newLabel });
+          if (d.settings) { setSettings(d.settings); setNewWord(""); setNewLabel(""); setNote(`Added "${newWord}"`); }
+        }}>Add</button>
+      </div>
+      {[...settings.words].reverse().map((w) => (
+        <div key={w.id} style={styles.row}>
+          <b style={{ flex: 1 }}>{w.word}</b>
+          <span style={{ color: "#c2a488", fontSize: 12.5 }}>{w.label}</span>
+          <span style={{ fontSize: 12.5, color: "#c2a488" }}>{entrants.filter((e) => e.wordsRedeemed.includes(w.id)).length} used</span>
+          <button style={w.active ? styles.removeBtn : styles.addBtn} onClick={async () => {
+            const d = await post({ action: "toggleWord", id: w.id }); if (d.settings) setSettings(d.settings);
+          }}>{w.active ? "Turn off" : "Turn on"}</button>
+        </div>
+      ))}
+
+      <h3 style={{ color: "#e8a13c", fontSize: 15, marginTop: 26 }}>🎲 Draw winners</h3>
+      <div style={styles.row}>
+        <select style={styles.select} value={drawPrize} onChange={(e) => setDrawPrize(e.target.value)}>
+          {settings.prizes.map((p) => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <button style={styles.saveBtn} onClick={async () => {
+          if (!confirm(`Draw a random winner for: ${drawPrize}?`)) return;
+          const d = await post({ action: "draw", prize: drawPrize });
+          if (d.winner) { setSettings(d.settings); setNote(`🎉 Winner: ${d.winner.nickname} (${d.winner.name})`); }
+        }}>Draw a winner</button>
+      </div>
+      {settings.winners.map((w) => (
+        <div key={w.emailKey} style={{ ...styles.row, flexDirection: "column", alignItems: "flex-start" }}>
+          <b>🏆 {w.nickname} · {w.name}</b>
+          <span style={{ fontSize: 12.5, color: "#c2a488" }}>{w.email} · {w.prize}</span>
+          <button style={{ ...styles.removeBtn, marginTop: 8 }} onClick={async () => {
+            if (!confirm("Remove this winner (for example, if they didn't claim in time)?")) return;
+            const d = await post({ action: "removeWinner", emailKey: w.emailKey }); if (d.settings) setSettings(d.settings);
+          }}>Remove winner</button>
+        </div>
+      ))}
+
+      <h3 style={{ color: "#e8a13c", fontSize: 15, marginTop: 26 }}>👥 Players</h3>
+      <input style={{ ...styles.input, width: "100%", marginBottom: 10 }} placeholder="Search name, nickname, or email" value={search} onChange={(e) => setSearch(e.target.value)} />
+      {shown.map((e) => (
+        <div key={e.emailKey} style={{ ...styles.row, flexDirection: "column", alignItems: "flex-start", opacity: e.disqualified ? 0.5 : 1 }}>
+          <div style={{ fontWeight: 700 }}>{e.breakdown.total} entries · {e.nickname} <span style={{ fontWeight: 400, color: "#c2a488" }}>({e.name}, {e.email})</span></div>
+          <div style={{ fontSize: 12, color: "#c2a488", marginTop: 4 }}>
+            base 1 · substack {e.breakdown.substack} · telegram {e.breakdown.telegram} · words {e.breakdown.words} · friends {e.breakdown.referrals} · bonus {e.breakdown.bonus}
+            {" · "}joined {new Date(e.createdAt).toLocaleString()}
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+            <button style={styles.addBtn} onClick={async () => { await post({ action: "adjust", emailKey: e.emailKey, bonus: (e.bonus || 0) + 1 }); load(); }}>+1 bonus</button>
+            <button style={styles.addBtn} onClick={async () => { await post({ action: "adjust", emailKey: e.emailKey, bonus: (e.bonus || 0) - 1 }); load(); }}>-1</button>
+            <button style={styles.removeBtn} onClick={async () => { await post({ action: "adjust", emailKey: e.emailKey, disqualified: !e.disqualified }); load(); }}>
+              {e.disqualified ? "Reinstate" : "Disqualify"}
+            </button>
+            <button style={styles.removeBtn} onClick={async () => {
+              if (!confirm(`Permanently delete ${e.nickname}'s entry? Use this for test entries.`)) return;
+              await post({ action: "delete", emailKey: e.emailKey }); load();
+            }}>Delete</button>
+          </div>
+        </div>
+      ))}
+
+      <h3 style={{ color: "#e8a13c", fontSize: 15, marginTop: 26 }}>⚙️ Settings</h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <label style={styles.checkLabel}>Title</label>
+        <input style={styles.input} value={settings.title} onChange={(e) => setSettings({ ...settings, title: e.target.value })} />
+        <label style={styles.checkLabel}>Entries open (your local time)</label>
+        <input type="datetime-local" style={styles.input} value={toLocalInput(settings.opensAt)} onChange={(e) => setSettings({ ...settings, opensAt: new Date(e.target.value).getTime() })} />
+        <label style={styles.checkLabel}>Entries close (your local time)</label>
+        <input type="datetime-local" style={styles.input} value={toLocalInput(settings.closesAt)} onChange={(e) => setSettings({ ...settings, closesAt: new Date(e.target.value).getTime() })} />
+        <label style={styles.checkLabel}>When and where you draw</label>
+        <input style={styles.input} value={settings.drawText} onChange={(e) => setSettings({ ...settings, drawText: e.target.value })} />
+        <label style={styles.checkLabel}>Prizes (one per line)</label>
+        <textarea style={{ ...styles.input, minHeight: 80 }} value={prizesText} onChange={(e) => setPrizesText(e.target.value)} />
+        <label style={styles.checkLabel}>Brand disclosure</label>
+        <input style={styles.input} value={settings.brands} onChange={(e) => setSettings({ ...settings, brands: e.target.value })} />
+        <label style={styles.checkLabel}>Sponsor (your LLC)</label>
+        <input style={styles.input} value={settings.sponsorName} onChange={(e) => setSettings({ ...settings, sponsorName: e.target.value })} />
+        <label style={styles.checkLabel}>Sponsor mailing address (shown in the official rules)</label>
+        <input style={styles.input} value={settings.sponsorAddress} onChange={(e) => setSettings({ ...settings, sponsorAddress: e.target.value })} placeholder="A business address or PO box is fine" />
+        <button style={{ ...styles.saveBtn, alignSelf: "flex-start" }} onClick={async () => {
+          const d = await post({ action: "saveSettings", settings: { ...settings, prizes: prizesText.split("\n").map((p) => p.trim()).filter(Boolean) } });
+          if (d.settings) { setSettings(d.settings); setNote("Giveaway settings saved."); }
+        }}>Save settings</button>
+      </div>
     </div>
   );
 }
