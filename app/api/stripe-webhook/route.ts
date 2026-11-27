@@ -28,7 +28,9 @@ export async function POST(req: Request) {
     const session = event.data.object as Stripe.Checkout.Session;
     const meta = session.metadata || {};
 
-    if (meta.kind === "monthly-supporter") {
+    if (meta.kind === "one-time-gift") {
+      // One-time gifts have no queue spot or perks. Stripe keeps the record.
+    } else if (meta.kind === "monthly-supporter") {
       const siteState = await getSiteState();
       siteState.supporters.push({
         id: makeSiteId(),

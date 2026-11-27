@@ -77,7 +77,7 @@ export default function OverlayPage() {
               ))}
             </span>
           </div>
-                    {state?.nowPlaying?.vip && <div style={vipBadgeStyle}>★ VIP REQUEST</div>}
+                    {state?.nowPlaying?.vip && <div style={vipBadgeStyle}>{state.nowPlaying.founding ? "★ FOUNDING VIP REQUEST" : "★ VIP REQUEST"}</div>}
           <div style={{ fontWeight: 700, fontSize: 30, lineHeight: 1.15, color: "#fff" }}>{state?.nowPlaying?.title || "—"}</div>
           <div style={{ color: "#e7c9a8", fontSize: 20, marginTop: 6 }}>{state?.nowPlaying?.artist || ""}</div>
           {state?.nowPlaying?.name && (
@@ -98,7 +98,7 @@ export default function OverlayPage() {
           </div>
           <div style={{ ...miniPillStyle, marginTop: 12 }}>
             <div style={miniTagStyle}>Up next</div>
-                        {upNext?.vip && <div style={{ ...vipBadgeStyle, fontSize: 12, marginTop: 4, marginBottom: 2 }}>★ VIP</div>}
+                        {upNext?.vip && <div style={{ ...vipBadgeStyle, fontSize: 12, marginTop: 4, marginBottom: 2 }}>{upNext.founding ? "★ FOUNDING VIP" : "★ VIP"}</div>}
             <div style={miniTitleStyle}>{upNext?.title || "—"}</div>
             <div style={miniArtistStyle}>{upNext?.artist || ""}</div>
           </div>

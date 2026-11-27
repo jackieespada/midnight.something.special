@@ -44,6 +44,7 @@ export async function POST(req: Request) {
     videoUrl: videoUrl || undefined,
     ts: Date.now(),
     vip: true,
+    founding: status.founding || undefined,
   });
   await setState(showId, state);
   await addUsage(email.toLowerCase());

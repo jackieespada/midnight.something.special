@@ -24,6 +24,40 @@ export default function LandingPage() {
   const [supName, setSupName] = useState("");
   const [supMessage, setSupMessage] = useState("");
   const [supStatus, setSupStatus] = useState<"idle" | "sending" | "error">("idle");
+  const [giftAmount, setGiftAmount] = useState("10");
+  const [giftName, setGiftName] = useState("");
+  const [giftStatus, setGiftStatus] = useState<"idle" | "sending" | "error">("idle");
+  const [giftThanks, setGiftThanks] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("gift") === "1") {
+      setGiftThanks(true);
+    }
+  }, []);
+
+  async function startGiftCheckout() {
+    const amount = Number(giftAmount);
+    if (!amount || amount < 1 || amount > 500) {
+      setGiftStatus("error");
+      return;
+    }
+    setGiftStatus("sending");
+    try {
+      const res = await fetch("/api/site/one-time", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, name: giftName }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setGiftStatus("error");
+      }
+    } catch {
+      setGiftStatus("error");
+    }
+  }
 
   useEffect(() => {
     fetch("/api/site/state", { cache: "no-store" })
@@ -323,12 +357,91 @@ export default function LandingPage() {
             )}
           </div>
 
+          <div style={{ ...styles.suggestBox, marginTop: 14 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 6 }}>Prefer a one-time gift?</div>
+            {giftThanks ? (
+              <p style={{ margin: 0, fontSize: 13.5, color: "#4dd9e8" }}>
+                Thank you so much! Your gift means the world and keeps the shows going. 💜
+              </p>
+            ) : (
+              <>
+                <p style={{ margin: "0 0 12px", fontSize: 13.5, color: "#c9b8e0" }}>
+                  No monthly charge, no strings. Just a little love for the shows.
+                </p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                  {["5", "10", "25"].map((a) => (
+                    <button
+                      key={a}
+                      onClick={() => setGiftAmount(a)}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: 999,
+                        border: giftAmount === a ? "2px solid #ff3fa4" : "1px solid rgba(255,255,255,.18)",
+                        background: giftAmount === a ? "rgba(255,63,164,.18)" : "rgba(0,0,0,.25)",
+                        color: "#fdf6ff",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      ${a}
+                    </button>
+                  ))}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontWeight: 700 }}>$</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={giftAmount}
+                      onChange={(e) => setGiftAmount(e.target.value)}
+                      aria-label="Custom amount"
+                      style={{ ...styles.input, marginTop: 0, width: 90 }}
+                    />
+                  </div>
+                </div>
+                <input
+                  value={giftName}
+                  onChange={(e) => setGiftName(e.target.value)}
+                  placeholder="Your name (optional)"
+                  style={styles.input}
+                />
+                <button onClick={startGiftCheckout} style={styles.suggestBtn} disabled={giftStatus === "sending"}>
+                  {giftStatus === "sending" ? "Redirecting to checkout..." : "Send a One-Time Gift"}
+                </button>
+                {giftStatus === "error" && (
+                  <div style={{ color: "#ff3fa4", marginTop: 8, fontSize: 12.5 }}>
+                    Pick an amount between $1 and $500 and try again.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
           {supporters.length > 0 && (
             <div style={{ marginTop: 18 }}>
               {supporters.map((s) => (
                 <div key={s.id} style={styles.supporterCard}>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>
                     {s.name || "Anonymous"}{" "}
+                    {s.founding && (
+                      <span
+                        style={{
+                          display: "inline-block",
+                          fontSize: 10.5,
+                          fontWeight: 800,
+                          letterSpacing: ".08em",
+                          color: "#1a0f08",
+                          background: "#e8a13c",
+                          borderRadius: 999,
+                          padding: "2px 8px",
+                          marginRight: 6,
+                          verticalAlign: "middle",
+                        }}
+                      >
+                        ★ FOUNDING VIP
+                      </span>
+                    )}
                     <span style={{ color: "#4dd9e8", fontWeight: 600 }}>
                       · {s.tier === "vip" ? "VIP · " : s.tier === "producer" ? "Producer · " : ""}${(s.amountCents / 100).toFixed(0)}/mo
                     </span>
