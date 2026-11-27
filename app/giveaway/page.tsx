@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Level = { min: number; name: string; emoji: string };
 type Status = {
@@ -197,11 +197,14 @@ export default function GiveawayPage() {
 
   return (
     <div style={S.page}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@400;600;700;800&display=swap');`}</style>
+      <Snow />
+      <Lights />
       <div style={S.wrap}>
         <a href="/" style={S.back}>‹ Back to jackieespada.com</a>
 
         <header style={S.header}>
-          <div style={S.kicker}>FREE HOLIDAY GIVEAWAY</div>
+          <div style={S.kicker}>❄ FREE HOLIDAY GIVEAWAY ❄</div>
           <h1 style={S.h1}>{board?.title || "12 Days of Christmas with Jackie"}</h1>
           <p style={S.lead}>Free to enter. Earn bonus entries all 12 days. Winners drawn {board?.drawText || "live on the show"}.</p>
           {board && (
@@ -235,9 +238,9 @@ export default function GiveawayPage() {
         </section>
 
         {status ? (
-          <section style={{ ...S.card, borderColor: "#ff3fa4" }}>
+          <section style={{ ...S.card, borderColor: "#e63946", boxShadow: "0 0 24px rgba(230,57,70,.25)" }}>
             <div style={S.title}>Your entries, {status.nickname}</div>
-            {status.disqualified && <p style={{ color: "#ff3fa4" }}>This entry isn't eligible. Reach out to Jackie if you think that's a mistake.</p>}
+            {status.disqualified && <p style={{ color: "#ff8a8a" }}>This entry isn't eligible. Reach out to Jackie if you think that's a mistake.</p>}
             <div style={S.bigRow}>
               <div style={S.big}>{status.breakdown.total}</div>
               <div>
@@ -283,7 +286,7 @@ export default function GiveawayPage() {
                 <button style={S.mini} onClick={redeemWord} disabled={!word.trim()}>Add</button>
               </div>
             )}
-            {wordMsg && <div style={{ ...S.small, marginLeft: 34, color: wordMsg.startsWith("🎉") ? "#4dd9e8" : "#ff3fa4" }}>{wordMsg}</div>}
+            {wordMsg && <div style={{ ...S.small, marginLeft: 34, color: wordMsg.startsWith("🎉") ? "#2ecc71" : "#ff8a8a" }}>{wordMsg}</div>}
 
             <div style={S.quest}>
               <Check done={status.referralCount >= MAX_FRIENDS} />
@@ -342,12 +345,12 @@ export default function GiveawayPage() {
                 <button style={S.cta} onClick={() => lookup(email)} disabled={busy}>{busy ? "Looking..." : "Show my entries"}</button>
               </>
             )}
-            {msg && <div style={{ color: "#ff3fa4", marginTop: 10, fontSize: 13 }}>{msg}</div>}
+            {msg && <div style={{ color: "#ff8a8a", marginTop: 10, fontSize: 13 }}>{msg}</div>}
           </section>
         )}
 
         <section style={S.card}>
-          <div style={S.title}>🏅 Leaderboard</div>
+          <div style={S.title}>🏅 Nice List Leaderboard</div>
           {board && board.top.length > 0 ? (
             board.top.map((r, i) => (
               <div key={i} style={S.lbRow}>
@@ -358,7 +361,7 @@ export default function GiveawayPage() {
               </div>
             ))
           ) : (
-            <p style={S.muted}>Be the first name on the board!</p>
+            <p style={S.muted}>Be the first name on the Nice List!</p>
           )}
           <p style={S.small}>More entries means more chances, not a guaranteed win. Every winner is picked at random.</p>
         </section>
@@ -380,8 +383,80 @@ export default function GiveawayPage() {
   );
 }
 
+function Snow() {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    let w = 0, h = 0, raf = 0;
+    const resize = () => {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    const count = Math.min(140, Math.round((w * h) / 9000));
+    const flakes = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 2.6 + 0.8,
+      s: Math.random() * 0.8 + 0.35,
+      drift: Math.random() * 0.6 - 0.3,
+      phase: Math.random() * Math.PI * 2,
+    }));
+    const tick = () => {
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "rgba(255,255,255,.85)";
+      for (const f of flakes) {
+        f.phase += 0.01;
+        f.y += f.s;
+        f.x += f.drift + Math.sin(f.phase) * 0.3;
+        if (f.y > h + 5) { f.y = -5; f.x = Math.random() * w; }
+        if (f.x > w + 5) f.x = -5;
+        if (f.x < -5) f.x = w + 5;
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+  }, []);
+  return <canvas ref={ref} aria-hidden style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }} />;
+}
+
+const BULB_COLORS = ["#e63946", "#f4c430", "#2ecc71", "#4dd9e8", "#ff7eb6"];
+function Lights() {
+  return (
+    <div aria-hidden style={{ position: "relative", height: 34, overflow: "hidden" }}>
+      <style>{`@keyframes twinkle { 0%,100% { opacity: 1; filter: brightness(1.2); } 50% { opacity: .45; filter: brightness(.8); } }`}</style>
+      <svg width="100%" height="34" preserveAspectRatio="none" viewBox="0 0 100 10" style={{ position: "absolute", top: 0 }}>
+        <path d="M0,2 Q5,7 10,2 T20,2 T30,2 T40,2 T50,2 T60,2 T70,2 T80,2 T90,2 T100,2" stroke="#3a5a40" strokeWidth=".5" fill="none" />
+      </svg>
+      <div style={{ display: "flex", justifyContent: "space-around", position: "absolute", inset: 0, top: 9 }}>
+        {Array.from({ length: 18 }).map((_, i) => (
+          <span
+            key={i}
+            style={{
+              width: 10, height: 15, borderRadius: "50% 50% 50% 50% / 60% 60% 40% 40%",
+              background: BULB_COLORS[i % BULB_COLORS.length],
+              boxShadow: `0 0 12px ${BULB_COLORS[i % BULB_COLORS.length]}`,
+              marginTop: i % 2 ? 4 : 0,
+              animation: `twinkle ${1.4 + (i % 4) * 0.35}s ease-in-out infinite ${(i % 5) * 0.2}s`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Check({ done }: { done?: boolean }) {
-  return <span style={{ ...S.checkDot, background: done ? "#4dd9e8" : "transparent" }}>{done ? "✓" : ""}</span>;
+  return <span style={{ ...S.checkDot, background: done ? "#2ecc71" : "transparent" }}>{done ? "✓" : ""}</span>;
 }
 
 const S: Record<string, React.CSSProperties> = {
@@ -391,64 +466,65 @@ const S: Record<string, React.CSSProperties> = {
     fontFamily: "'Poppins', sans-serif",
     paddingBottom: 60,
     background:
-      "radial-gradient(circle at 15% 10%, rgba(255,63,164,.30), transparent 40%), radial-gradient(circle at 85% 20%, rgba(77,217,232,.26), transparent 42%), linear-gradient(180deg, #160a2e, #2a0e3d)",
+      "radial-gradient(circle at 15% 8%, rgba(230,57,70,.35), transparent 42%), radial-gradient(circle at 85% 18%, rgba(244,196,48,.18), transparent 40%), linear-gradient(180deg, #0d2b1d 0%, #123826 45%, #4a0f1c 100%)",
   },
-  wrap: { maxWidth: 640, margin: "0 auto", padding: "0 18px" },
-  back: { display: "inline-block", marginTop: 18, color: "#c9b8e0", fontSize: 13, textDecoration: "none" },
+  wrap: { maxWidth: 640, margin: "0 auto", padding: "0 18px", position: "relative", zIndex: 1 },
+  back: { display: "inline-block", marginTop: 10, color: "#cfe3d2", fontSize: 13, textDecoration: "none" },
   header: { textAlign: "center", padding: "26px 0 10px" },
-  kicker: { fontSize: 12, letterSpacing: ".2em", color: "#4dd9e8", fontWeight: 700 },
+  kicker: { fontSize: 12, letterSpacing: ".2em", color: "#f4c430", fontWeight: 700 },
   h1: {
     margin: "8px 0", fontSize: 34, lineHeight: 1.15, fontWeight: 800,
-    background: "linear-gradient(90deg,#ff3fa4,#4dd9e8)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
+    color: "#fffaf0", fontFamily: "'Dancing Script', 'Poppins', cursive", fontSize: 44,
+    textShadow: "0 0 18px rgba(244,196,48,.45), 0 2px 0 #7a1020",
   },
-  lead: { color: "#c9b8e0", fontSize: 14.5, margin: "0 auto", maxWidth: 460, lineHeight: 1.55 },
+  lead: { color: "#e8f1e4", fontSize: 14.5, margin: "0 auto", maxWidth: 460, lineHeight: 1.55 },
   countdown: {
     display: "inline-block", marginTop: 16, padding: "10px 18px", borderRadius: 999,
-    background: "rgba(255,63,164,.16)", border: "1px solid rgba(255,63,164,.5)", fontSize: 14,
+    background: "rgba(230,57,70,.22)", border: "1px solid rgba(244,196,48,.6)", fontSize: 14,
   },
-  stats: { display: "flex", justifyContent: "center", gap: 28, marginTop: 16, fontSize: 12, color: "#c9b8e0" },
+  stats: { display: "flex", justifyContent: "center", gap: 28, marginTop: 16, fontSize: 12, color: "#cfe3d2" },
   card: {
-    marginTop: 18, background: "rgba(0,0,0,.28)", border: "1px solid rgba(255,255,255,.14)",
+    marginTop: 18, background: "rgba(8,28,18,.62)", border: "1px solid rgba(244,196,48,.35)", backdropFilter: "blur(3px)",
     borderRadius: 18, padding: "18px 18px",
   },
-  title: { fontSize: 13, textTransform: "uppercase", letterSpacing: ".14em", color: "#4dd9e8", fontWeight: 700, marginBottom: 12 },
-  prize: { padding: "10px 12px", background: "rgba(255,255,255,.06)", borderRadius: 12, marginBottom: 8, fontSize: 14 },
-  small: { fontSize: 12, color: "#c9b8e0", marginTop: 8, lineHeight: 1.5 },
-  muted: { color: "#c9b8e0", fontSize: 13 },
+  title: { fontSize: 13, textTransform: "uppercase", letterSpacing: ".14em", color: "#f4c430", fontWeight: 700, marginBottom: 12 },
+  prize: { padding: "10px 12px", background: "rgba(230,57,70,.16)", border: "1px dashed rgba(244,196,48,.45)", borderRadius: 12, marginBottom: 8, fontSize: 14 },
+  small: { fontSize: 12, color: "#cfe3d2", marginTop: 8, lineHeight: 1.5 },
+  muted: { color: "#cfe3d2", fontSize: 13 },
   row: { display: "flex", justifyContent: "space-between", gap: 10, padding: "6px 0", fontSize: 14 },
   toggle: { display: "flex", gap: 8, marginBottom: 12 },
-  tab: { flex: 1, padding: 9, borderRadius: 999, border: "1px solid rgba(255,255,255,.18)", background: "transparent", color: "#c9b8e0", cursor: "pointer", fontFamily: "inherit" },
-  tabOn: { flex: 1, padding: 9, borderRadius: 999, border: "none", background: "#ff3fa4", color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  tab: { flex: 1, padding: 9, borderRadius: 999, border: "1px solid rgba(255,255,255,.18)", background: "transparent", color: "#cfe3d2", cursor: "pointer", fontFamily: "inherit" },
+  tabOn: { flex: 1, padding: 9, borderRadius: 999, border: "none", background: "#c8102e", color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   input: {
     width: "100%", boxSizing: "border-box", marginTop: 8, padding: "11px 13px", borderRadius: 12,
     border: "1px solid rgba(255,255,255,.18)", background: "rgba(0,0,0,.3)", color: "#fdf6ff", fontSize: 14, fontFamily: "inherit",
   },
-  boxTitle: { marginTop: 16, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#ff9fd2" },
+  boxTitle: { marginTop: 16, fontSize: 12, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#f4c430" },
   check: { display: "flex", gap: 8, alignItems: "center", fontSize: 13.5, marginTop: 8 },
-  link: { color: "#4dd9e8" },
+  link: { color: "#f4c430" },
   cta: {
     width: "100%", marginTop: 16, padding: "13px 0", borderRadius: 999, border: "none", fontWeight: 700, fontSize: 15,
-    color: "#fff", background: "linear-gradient(90deg,#ff3fa4,#b24bff)", cursor: "pointer", fontFamily: "inherit",
+    color: "#fff", background: "linear-gradient(90deg,#c8102e,#e63946)", boxShadow: "0 0 18px rgba(230,57,70,.5)", cursor: "pointer", fontFamily: "inherit",
   },
   bigRow: { display: "flex", alignItems: "center", gap: 16 },
   big: { fontSize: 54, fontWeight: 800, lineHeight: 1, color: "#fff" },
-  levelPill: { display: "inline-block", padding: "4px 12px", borderRadius: 999, background: "#e8a13c", color: "#1a0f08", fontWeight: 800, fontSize: 13 },
+  levelPill: { display: "inline-block", padding: "4px 12px", borderRadius: 999, background: "#f4c430", color: "#1a0f08", fontWeight: 800, fontSize: 13 },
   bar: { height: 10, borderRadius: 999, background: "rgba(255,255,255,.1)", margin: "14px 0 16px", overflow: "hidden" },
-  barFill: { height: "100%", borderRadius: 999, background: "linear-gradient(90deg,#ff3fa4,#4dd9e8)", transition: "width .4s" },
+  barFill: { height: "100%", borderRadius: 999, background: "repeating-linear-gradient(45deg,#c8102e 0 10px,#fffaf0 10px 20px)", transition: "width .4s" },
   quest: { display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: "1px solid rgba(255,255,255,.07)" },
   qText: { flex: 1, fontSize: 14 },
-  pts: { fontWeight: 800, color: "#4dd9e8", fontSize: 14 },
+  pts: { fontWeight: 800, color: "#f4c430", fontSize: 14 },
   checkDot: {
-    width: 24, height: 24, borderRadius: "50%", border: "2px solid #4dd9e8", display: "inline-flex",
+    width: 24, height: 24, borderRadius: "50%", border: "2px solid #2ecc71", display: "inline-flex",
     alignItems: "center", justifyContent: "center", fontSize: 13, color: "#160a2e", fontWeight: 800, flexShrink: 0,
   },
   mini: {
-    padding: "7px 14px", borderRadius: 999, border: "none", background: "#4dd9e8", color: "#160a2e",
+    padding: "7px 14px", borderRadius: 999, border: "none", background: "#2ecc71", color: "#0d2b1d",
     fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
   },
-  linkBtn: { marginTop: 14, background: "none", border: "none", color: "#c9b8e0", fontSize: 12, textDecoration: "underline", cursor: "pointer", padding: 0 },
+  linkBtn: { marginTop: 14, background: "none", border: "none", color: "#cfe3d2", fontSize: 12, textDecoration: "underline", cursor: "pointer", padding: 0 },
   lbRow: { display: "flex", alignItems: "center", gap: 10, padding: "9px 4px", borderTop: "1px solid rgba(255,255,255,.07)" },
-  rank: { width: 30, textAlign: "center", fontWeight: 700, color: "#c9b8e0" },
-  lbTotal: { minWidth: 34, textAlign: "right", fontWeight: 800, color: "#4dd9e8" },
+  rank: { width: 30, textAlign: "center", fontWeight: 700, color: "#cfe3d2" },
+  lbTotal: { minWidth: 34, textAlign: "right", fontWeight: 800, color: "#f4c430" },
   how: { display: "flex", gap: 12, padding: "6px 0", fontSize: 14 },
 };
