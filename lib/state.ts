@@ -1,8 +1,8 @@
 export type ShowId = "midnight-something-special" | "hooks-harmony";
 
 export type Song = { title: string; artist: string };
-export type NowPlaying = Song & { name?: string; message?: string; videoUrl?: string; vip?: boolean };
-export type Request = Song & { id: string; name?: string; message?: string; videoUrl?: string; ts: number; tipped?: boolean; tipCents?: number; round?: number; vip?: boolean };
+export type NowPlaying = Song & { name?: string; message?: string; videoUrl?: string; vip?: boolean; founding?: boolean };
+export type Request = Song & { id: string; name?: string; message?: string; videoUrl?: string; ts: number; tipped?: boolean; tipCents?: number; round?: number; vip?: boolean; founding?: boolean };
 export type PlayedSong = Song & { name?: string; message?: string; videoUrl?: string; ts: number };
 export type Episode = { date: string; songs: PlayedSong[] };
 

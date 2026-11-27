@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { LinkItem, CalendarEntry, AffiliateItem, Suggestion, Supporter } from "@/lib/site-state";
+import { supporterIsFounding } from "@/lib/founding";
 
 type Tab = "profile" | "links" | "calendar" | "affiliates" | "suggestions" | "supporters";
 
@@ -101,6 +102,18 @@ export default function SiteAdminPage() {
     });
   }
 
+  async function editSupporter(id: string, changes: { name?: string; message?: string; founding?: boolean }) {
+    const res = await fetch("/api/site/supporters-admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action: "edit", ...changes }),
+    });
+    const data = await res.json();
+    if (data.supporter) {
+      setSupporters((prev) => prev.map((s) => (s.id === id ? data.supporter : s)));
+    }
+  }
+
   async function deleteSupporter(id: string) {
     setSupporters((prev) => prev.filter((s) => s.id !== id));
     await fetch("/api/site/supporters-admin", {
@@ -151,7 +164,7 @@ export default function SiteAdminPage() {
           <SuggestionsList suggestions={suggestions} onRead={markRead} onDelete={deleteSuggestion} />
         )}
         {tab === "supporters" && (
-          <SupportersList supporters={supporters} onDelete={deleteSupporter} />
+          <SupportersList supporters={supporters} onDelete={deleteSupporter} onEdit={editSupporter} />
         )}
       </div>
     </div>
@@ -343,9 +356,11 @@ function SuggestionsList({
 function SupportersList({
   supporters,
   onDelete,
+  onEdit,
 }: {
   supporters: Supporter[];
   onDelete: (id: string) => void;
+  onEdit: (id: string, changes: { name?: string; message?: string; founding?: boolean }) => Promise<void>;
 }) {
   if (supporters.length === 0) {
     return <p style={{ color: "#c2a488" }}>No monthly supporters yet.</p>;
@@ -354,27 +369,74 @@ function SupportersList({
     <div>
       <p style={{ color: "#c2a488", fontSize: 13, marginBottom: 14 }}>
         These are the people currently showing up on your public supporter wall.
-        Delete one here if something needs to be taken down.
+        Edit a name or message here (like when someone joined anonymously), or delete one if
+        something needs to be taken down. Everyone who signs up before January 1, 2027 gets the
+        Founding VIP badge automatically.
       </p>
       {supporters.map((s) => (
-        <div key={s.id} style={{ ...styles.row, flexDirection: "column", alignItems: "flex-start" }}>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>
-            {s.name || "Anonymous"}{s.tier ? ` [${s.tier.toUpperCase()}]` : ""} — ${(s.amountCents / 100).toFixed(2)}/mo
-          </div>
-            {s.themeIdea && (
-            <div style={{ fontSize: 13, color: "#e8a13c", marginTop: 4 }}>Theme night idea: {s.themeIdea}</div>
-          )}
-          {s.message && (
-            <div style={{ fontSize: 13, color: "#fbeedd", marginTop: 4 }}>{s.message}</div>
-          )}
-          <div style={{ fontSize: 12, color: "#c2a488", marginTop: 6 }}>
-            {new Date(s.ts).toLocaleString()}
-          </div>
-          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-            <button style={styles.removeBtn} onClick={() => onDelete(s.id)}>Delete</button>
+        <SupporterRow key={s.id} s={s} onDelete={onDelete} onEdit={onEdit} />
+      ))}
+    </div>
+  );
+}
+
+function SupporterRow({
+  s,
+  onDelete,
+  onEdit,
+}: {
+  s: Supporter;
+  onDelete: (id: string) => void;
+  onEdit: (id: string, changes: { name?: string; message?: string; founding?: boolean }) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(s.name || "");
+  const [message, setMessage] = useState(s.message || "");
+  const [founding, setFounding] = useState(supporterIsFounding(s));
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    await onEdit(s.id, { name, message, founding });
+    setSaving(false);
+    setEditing(false);
+  }
+
+  return (
+    <div style={{ ...styles.row, flexDirection: "column", alignItems: "flex-start" }}>
+      <div style={{ fontSize: 14, fontWeight: 700 }}>
+        {supporterIsFounding(s) && <span style={{ color: "#e8a13c" }}>★ FOUNDING VIP · </span>}
+        {s.name || "Anonymous"}{s.tier ? ` [${s.tier.toUpperCase()}]` : ""} - ${(s.amountCents / 100).toFixed(2)}/mo
+      </div>
+      {s.themeIdea && (
+        <div style={{ fontSize: 13, color: "#e8a13c", marginTop: 4 }}>Theme night idea: {s.themeIdea}</div>
+      )}
+      {!editing && s.message && (
+        <div style={{ fontSize: 13, color: "#fbeedd", marginTop: 4 }}>{s.message}</div>
+      )}
+      <div style={{ fontSize: 12, color: "#c2a488", marginTop: 6 }}>
+        {new Date(s.ts).toLocaleString()}
+      </div>
+
+      {editing ? (
+        <div style={{ width: "100%", marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+          <input style={styles.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Display name (leave blank for Anonymous)" />
+          <input style={styles.input} value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Message for the wall (optional)" />
+          <label style={styles.checkLabel}>
+            <input type="checkbox" checked={founding} onChange={(e) => setFounding(e.target.checked)} />
+            Founding VIP badge
+          </label>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button style={styles.saveBtn} onClick={save} disabled={saving}>{saving ? "Saving..." : "Save"}</button>
+            <button style={styles.addBtn} onClick={() => setEditing(false)}>Cancel</button>
           </div>
         </div>
-      ))}
+      ) : (
+        <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+          <button style={styles.addBtn} onClick={() => setEditing(true)}>Edit</button>
+          <button style={styles.removeBtn} onClick={() => onDelete(s.id)}>Delete</button>
+        </div>
+      )}
     </div>
   );
 }

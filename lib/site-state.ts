@@ -46,6 +46,7 @@ export type Supporter = {
   amountCents: number;
   tier?: string;       // "supporter", "vip" or "producer" (older signups have none)
   themeIdea?: string;  // Producer only: their theme night idea (admin only, never public)
+  founding?: boolean;  // Set by hand in the admin to override the automatic Founding VIP date rule
   ts: number;
 };
 

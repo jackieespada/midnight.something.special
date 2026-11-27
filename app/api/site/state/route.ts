@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSiteState } from "@/lib/site-state";
+import { supporterIsFounding } from "@/lib/founding";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export async function GET() {
       amountCents: s.amountCents,
       tier: s.tier,
       ts: s.ts,
+      founding: supporterIsFounding(s),
     })),
   });
 }
