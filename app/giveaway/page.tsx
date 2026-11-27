@@ -473,7 +473,7 @@ const S: Record<string, React.CSSProperties> = {
   header: { textAlign: "center", padding: "26px 0 10px" },
   kicker: { fontSize: 12, letterSpacing: ".2em", color: "#f4c430", fontWeight: 700 },
   h1: {
-    margin: "8px 0", fontSize: 34, lineHeight: 1.15, fontWeight: 800,
+    margin: "8px 0", lineHeight: 1.15, fontWeight: 700,
     color: "#fffaf0", fontFamily: "'Dancing Script', 'Poppins', cursive", fontSize: 44,
     textShadow: "0 0 18px rgba(244,196,48,.45), 0 2px 0 #7a1020",
   },
