@@ -54,6 +54,7 @@ export async function POST(req: Request) {
     refCode: code,
     substack: !!body.substack,
     telegram: !!body.telegram,
+    telegramName: (body.telegramName || "").toString().trim().slice(0, 40) || undefined,
     wordsRedeemed: [],
     referrals: [],
     bonus: 0,

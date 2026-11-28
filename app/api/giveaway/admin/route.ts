@@ -74,6 +74,9 @@ export async function POST(req: Request) {
     if (typeof body.bonus === "number") e.bonus = Math.max(-50, Math.min(50, Math.round(body.bonus)));
     if (typeof body.disqualified === "boolean") e.disqualified = body.disqualified;
     if (typeof body.nickname === "string") e.nickname = body.nickname.trim().slice(0, 24) || e.nickname;
+    // Fact-checking: setting either one also marks it as checked.
+    if (typeof body.substack === "boolean") { e.substack = body.substack; e.substackChecked = true; }
+    if (typeof body.telegram === "boolean") { e.telegram = body.telegram; e.telegramChecked = true; }
     await saveEntrant(e);
     return NextResponse.json({ ok: true });
   }

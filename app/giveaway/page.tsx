@@ -65,6 +65,7 @@ export default function GiveawayPage() {
   const [rules, setRules] = useState(false);
   const [substack, setSubstack] = useState(false);
   const [telegram, setTelegram] = useState(false);
+  const [telegramName, setTelegramName] = useState("");
   const [ref, setRef] = useState("");
   const [honey, setHoney] = useState("");
 
@@ -129,7 +130,7 @@ export default function GiveawayPage() {
       const res = await fetch("/api/giveaway/enter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, nickname, email, adult, us, rules, substack, telegram, ref, website: honey }),
+        body: JSON.stringify({ name, nickname, email, adult, us, rules, substack, telegram, telegramName, ref, website: honey }),
       });
       const data = await res.json();
       if (data.status) {
@@ -151,7 +152,7 @@ export default function GiveawayPage() {
     const res = await fetch("/api/giveaway/status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: myEmail, [field]: true }),
+      body: JSON.stringify({ email: myEmail, [field]: true, telegramName }),
     });
     const data = await res.json();
     if (data.status) { setStatus(data.status); loadBoard(); }
@@ -272,8 +273,14 @@ export default function GiveawayPage() {
                 Join the{" "}
                 {telegramUrl ? <a href={telegramUrl} target="_blank" rel="noreferrer" style={S.link}>Telegram group</a> : "Telegram group"}
               </span>
-              {status.telegram ? <span style={S.pts}>+1</span> : status.open && <button style={S.mini} onClick={() => claim("telegram")}>I did it</button>}
+              {status.telegram && <span style={S.pts}>+1</span>}
             </div>
+            {!status.telegram && status.open && (
+              <div style={{ display: "flex", gap: 8, margin: "4px 0 10px 34px" }}>
+                <input value={telegramName} onChange={(e) => setTelegramName(e.target.value)} placeholder="Your Telegram name or @username" style={{ ...S.input, marginTop: 0 }} />
+                <button style={S.mini} onClick={() => claim("telegram")} disabled={!telegramName.trim()}>I joined</button>
+              </div>
+            )}
 
             <div style={S.quest}>
               <Check done={status.wordsUsed >= MAX_WORDS} />
@@ -332,6 +339,10 @@ export default function GiveawayPage() {
                   <div style={S.boxTitle}>Bonus entries (optional)</div>
                   <label style={S.check}><input type="checkbox" checked={substack} onChange={(e) => setSubstack(e.target.checked)} /> I subscribed free on <a href={SUBSTACK_URL} target="_blank" rel="noreferrer" style={S.link}>Substack</a> (+1)</label>
                   <label style={S.check}><input type="checkbox" checked={telegram} onChange={(e) => setTelegram(e.target.checked)} /> I joined the {telegramUrl ? <a href={telegramUrl} target="_blank" rel="noreferrer" style={S.link}>Telegram group</a> : "Telegram group"} (+1)</label>
+                  {telegram && (
+                    <input style={S.input} placeholder="Your Telegram name or @username (so Jackie can find you)" value={telegramName} onChange={(e) => setTelegramName(e.target.value)} />
+                  )}
+                  <div style={S.small}>Bonus entries get double-checked before the draw, so only check what you've really done. 😉</div>
 
                   <div style={S.boxTitle}>The fine print</div>
                   <label style={S.check}><input type="checkbox" checked={adult} onChange={(e) => setAdult(e.target.checked)} /> I'm 18 or older</label>
