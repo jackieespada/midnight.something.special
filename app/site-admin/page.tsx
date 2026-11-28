@@ -452,9 +452,32 @@ type GSettings = {
 };
 type GEntrant = {
   emailKey: string; email: string; name: string; nickname: string; refCode: string; substack: boolean; telegram: boolean;
+  telegramName?: string; substackChecked?: boolean; telegramChecked?: boolean;
   wordsRedeemed: string[]; referrals: string[]; bonus: number; disqualified?: boolean; createdAt: number;
   breakdown: { base: number; substack: number; telegram: number; words: number; referrals: number; bonus: number; total: number };
 };
+
+function FactCheck({ label, detail, claimed, checked, onSet }: {
+  label: string; detail: string; claimed: boolean; checked: boolean; onSet: (v: boolean) => void;
+}) {
+  const state = !claimed ? (checked ? "Removed" : "Not claimed") : checked ? "Confirmed ✓" : "Claimed, not checked yet";
+  const color = !claimed ? "#c2a488" : checked ? "#7fd18b" : "#e8a13c";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 12.5, flexWrap: "wrap" }}>
+      <span style={{ minWidth: 70, fontWeight: 700 }}>{label}:</span>
+      <span style={{ color }}>{state}</span>
+      <span style={{ color: "#c2a488" }}>({detail})</span>
+      {claimed ? (
+        <>
+          {!checked && <button style={styles.addBtn} onClick={() => onSet(true)}>Confirm</button>}
+          <button style={styles.removeBtn} onClick={() => onSet(false)}>Remove</button>
+        </>
+      ) : (
+        <button style={styles.addBtn} onClick={() => onSet(true)}>Add</button>
+      )}
+    </div>
+  );
+}
 
 function toLocalInput(ms: number) {
   const d = new Date(ms);
@@ -470,6 +493,7 @@ function GiveawayAdmin() {
   const [newLabel, setNewLabel] = useState("");
   const [drawPrize, setDrawPrize] = useState("");
   const [search, setSearch] = useState("");
+  const [onlyUnchecked, setOnlyUnchecked] = useState(false);
   const [note, setNote] = useState("");
 
   async function load() {
@@ -495,8 +519,11 @@ function GiveawayAdmin() {
   if (!settings) return <p style={{ color: "#c2a488" }}>Loading giveaway...</p>;
 
   const totalEntries = entrants.filter((e) => !e.disqualified).reduce((n, e) => n + e.breakdown.total, 0);
+  const needsCheck = (e: GEntrant) => (e.substack && !e.substackChecked) || (e.telegram && !e.telegramChecked);
+  const uncheckedCount = entrants.filter(needsCheck).length;
   const shown = entrants.filter((e) =>
-    !search || `${e.name} ${e.nickname} ${e.email}`.toLowerCase().includes(search.toLowerCase())
+    (!search || `${e.name} ${e.nickname} ${e.email} ${e.telegramName || ""}`.toLowerCase().includes(search.toLowerCase())) &&
+    (!onlyUnchecked || needsCheck(e))
   );
 
   return (
@@ -555,7 +582,11 @@ function GiveawayAdmin() {
       ))}
 
       <h3 style={{ color: "#e8a13c", fontSize: 15, marginTop: 26 }}>👥 Players</h3>
-      <input style={{ ...styles.input, width: "100%", marginBottom: 10 }} placeholder="Search name, nickname, or email" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <input style={{ ...styles.input, width: "100%", marginBottom: 10 }} placeholder="Search name, nickname, email, or Telegram name" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <label style={{ ...styles.checkLabel, marginBottom: 10 }}>
+        <input type="checkbox" checked={onlyUnchecked} onChange={(e) => setOnlyUnchecked(e.target.checked)} />
+        Only show bonus claims I still need to check ({uncheckedCount})
+      </label>
       {shown.map((e) => (
         <div key={e.emailKey} style={{ ...styles.row, flexDirection: "column", alignItems: "flex-start", opacity: e.disqualified ? 0.5 : 1 }}>
           <div style={{ fontWeight: 700 }}>{e.breakdown.total} entries · {e.nickname} <span style={{ fontWeight: 400, color: "#c2a488" }}>({e.name}, {e.email})</span></div>
@@ -563,6 +594,20 @@ function GiveawayAdmin() {
             base 1 · substack {e.breakdown.substack} · telegram {e.breakdown.telegram} · words {e.breakdown.words} · friends {e.breakdown.referrals} · bonus {e.breakdown.bonus}
             {" · "}joined {new Date(e.createdAt).toLocaleString()}
           </div>
+          <FactCheck
+            label="Substack"
+            detail={e.email}
+            claimed={e.substack}
+            checked={!!e.substackChecked}
+            onSet={async (v) => { await post({ action: "adjust", emailKey: e.emailKey, substack: v }); load(); }}
+          />
+          <FactCheck
+            label="Telegram"
+            detail={e.telegramName || "no name given"}
+            claimed={e.telegram}
+            checked={!!e.telegramChecked}
+            onSet={async (v) => { await post({ action: "adjust", emailKey: e.emailKey, telegram: v }); load(); }}
+          />
           <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
             <button style={styles.addBtn} onClick={async () => { await post({ action: "adjust", emailKey: e.emailKey, bonus: (e.bonus || 0) + 1 }); load(); }}>+1 bonus</button>
             <button style={styles.addBtn} onClick={async () => { await post({ action: "adjust", emailKey: e.emailKey, bonus: (e.bonus || 0) - 1 }); load(); }}>-1</button>

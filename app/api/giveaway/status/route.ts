@@ -4,7 +4,8 @@ import { getSettings, getEntrant, saveEntrant, emailKeyFor, isOpen, publicStatus
 export const dynamic = "force-dynamic";
 
 // Look up your entries by email. Also lets someone check the Substack or
-// Telegram box later if they join after entering.
+// Telegram box later if they join after entering. Once Jackie has
+// fact-checked a claim, only she can change it.
 export async function POST(req: Request) {
   const body = await req.json();
   const email = (body.email || "").toString();
@@ -16,8 +17,13 @@ export async function POST(req: Request) {
 
   let changed = false;
   if (isOpen(settings)) {
-    if (body.substack === true && !e.substack) { e.substack = true; changed = true; }
-    if (body.telegram === true && !e.telegram) { e.telegram = true; changed = true; }
+    if (body.substack === true && !e.substack && !e.substackChecked) { e.substack = true; changed = true; }
+    if (body.telegram === true && !e.telegram && !e.telegramChecked) {
+      e.telegram = true;
+      const tn = (body.telegramName || "").toString().trim().slice(0, 40);
+      if (tn) e.telegramName = tn;
+      changed = true;
+    }
   }
   if (changed) await saveEntrant(e);
 

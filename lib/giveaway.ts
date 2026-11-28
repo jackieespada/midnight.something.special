@@ -31,6 +31,9 @@ export type Entrant = {
   referredBy?: string;    // refCode of the person who referred them
   substack: boolean;
   telegram: boolean;
+  telegramName?: string;     // so Jackie can find them in the group
+  substackChecked?: boolean; // Jackie verified (or corrected) the Substack claim
+  telegramChecked?: boolean; // Jackie verified (or corrected) the Telegram claim
   wordsRedeemed: string[]; // SecretWord ids
   referrals: string[];     // emailKeys of friends who entered with their code
   bonus: number;           // manual adjustment by Jackie (can be negative)
